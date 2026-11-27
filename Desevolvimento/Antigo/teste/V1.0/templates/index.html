@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FinanceIA - Gestão Financeira Inteligente</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg-primary:#0d1117;--bg-secondary:#161b22;--bg-tertiary:#21262d;
+  --bg-card:#1c2128;--border:#30363d;--text-primary:#e6edf3;
+  --text-secondary:#8b949e;--text-muted:#6e7681;--accent:#58a6ff;
+  --accent-hover:#79c0ff;--success:#3fb950;--danger:#f85149;
+  --warning:#d29922;--purple:#bc8cff;--entrada:#3fb950;--saida:#f85149;
+  --radius:8px;--radius-lg:12px;--shadow:0 8px 32px rgba(0,0,0,0.4);
+  --transition:0.2s ease;
+}
+body{background:var(--bg-primary);color:var(--text-primary);
+  font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;line-height:1.5;overflow-x:hidden;}
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:var(--bg-primary);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:var(--text-muted);}
+
+/* AUTH */
+#auth-screen{display:flex;align-items:center;justify-content:center;
+  min-height:100vh;background-image:radial-gradient(ellipse at 50% 0%,rgba(88,166,255,0.08) 0%,transparent 60%);}
+.auth-box{background:var(--bg-secondary);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:40px;width:100%;max-width:420px;box-shadow:var(--shadow);}
+.auth-logo{text-align:center;margin-bottom:32px;}
+.auth-logo h1{font-size:28px;font-weight:700;color:var(--accent);}
+.auth-logo p{color:var(--text-secondary);margin-top:4px;font-size:13px;}
+.auth-tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:28px;}
+.auth-tab{flex:1;padding:10px;text-align:center;cursor:pointer;color:var(--text-secondary);
+  border-bottom:2px solid transparent;transition:var(--transition);font-weight:500;}
+.auth-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.form-group{margin-bottom:16px;}
+.form-group label{display:block;margin-bottom:6px;color:var(--text-secondary);font-size:13px;}
+.form-group input,.form-group select,.form-group textarea{
+  width:100%;padding:10px 14px;background:var(--bg-tertiary);border:1px solid var(--border);
+  border-radius:var(--radius);color:var(--text-primary);font-size:14px;transition:var(--transition);}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{
+  outline:none;border-color:var(--accent);}
+
+/* BOTÕES */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:10px 20px;border:none;border-radius:var(--radius);cursor:pointer;
+  font-size:14px;font-weight:500;transition:var(--transition);white-space:nowrap;}
+.btn-primary{background:var(--accent);color:#0d1117;}
+.btn-primary:hover{background:var(--accent-hover);}
+.btn-success{background:var(--success);color:#0d1117;}
+.btn-success:hover{opacity:0.9;}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-danger:hover{opacity:0.9;}
+.btn-ghost{background:transparent;color:var(--text-secondary);border:1px solid var(--border);}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
+.btn-warning{background:var(--warning);color:#0d1117;}
+.btn-purple{background:var(--purple);color:#0d1117;}
+.btn-sm{padding:6px 12px;font-size:12px;}
+.btn-full{width:100%;}
+.btn-icon{background:transparent;border:none;cursor:pointer;color:var(--text-secondary);
+  padding:6px;border-radius:var(--radius);transition:var(--transition);display:inline-flex;align-items:center;}
+.btn-icon:hover{color:var(--accent);background:var(--bg-tertiary);}
+
+/* ALERTS */
+.alert{padding:12px 16px;border-radius:var(--radius);margin-top:12px;font-size:13px;display:none;}
+.alert-error{background:rgba(248,81,73,0.15);border:1px solid rgba(248,81,73,0.3);color:#f85149;}
+.alert-success{background:rgba(63,185,80,0.15);border:1px solid rgba(63,185,80,0.3);color:#3fb950;}
+.alert-info{background:rgba(88,166,255,0.15);border:1px solid rgba(88,166,255,0.3);color:#58a6ff;}
+.alert-warning{background:rgba(210,153,34,0.15);border:1px solid rgba(210,153,34,0.3);color:#d29922;}
+
+/* LAYOUT */
+#app-screen{display:none;height:100vh;flex-direction:column;}
+.header{background:var(--bg-secondary);border-bottom:1px solid var(--border);
+  padding:0 24px;height:56px;display:flex;align-items:center;
+  justify-content:space-between;flex-shrink:0;z-index:100;}
+.header-logo{font-size:18px;font-weight:700;color:var(--accent);}
+.header-right{display:flex;align-items:center;gap:12px;}
+.user-badge{background:var(--bg-tertiary);border:1px solid var(--border);
+  border-radius:20px;padding:4px 12px;font-size:13px;color:var(--text-secondary);}
+.admin-badge{background:rgba(188,140,255,0.15);border:1px solid rgba(188,140,255,0.3);
+  color:var(--purple);border-radius:20px;padding:4px 10px;font-size:11px;font-weight:600;}
+.app-body{display:flex;flex:1;overflow:hidden;}
+
+/* SIDEBAR */
+.sidebar{
+  width:220px;
+  background:var(--bg-secondary);
+  border-right:1px solid var(--border);
+  padding:16px 0;
+  flex-shrink:0;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+}
+  padding:16px 0;flex-shrink:0;overflow-y:auto;}
+.nav-section{padding:0 12px;margin-bottom:8px;}
+.nav-label{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;
+  letter-spacing:0.5px;padding:6px 8px;margin-bottom:4px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 12px;
+  border-radius:var(--radius);cursor:pointer;color:var(--text-secondary);
+  transition:var(--transition);font-size:13px;font-weight:500;margin-bottom:2px;
+  border:none;background:transparent;width:100%;text-align:left;}
+.nav-item:hover{background:var(--bg-tertiary);color:var(--text-primary);}
+.nav-item.active{background:rgba(88,166,255,0.12);color:var(--accent);}
+.nav-icon{font-size:16px;width:20px;text-align:center;}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;padding:24px;background:var(--bg-primary);}
+.page{display:none;}
+.page.active{display:block;}
+.page-header{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+.page-title{font-size:20px;font-weight:700;}
+
+/* CARDS */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px;}
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;}
+.card-label{color:var(--text-secondary);font-size:12px;font-weight:600;
+  text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;}
+.card-value{font-size:24px;font-weight:700;}
+.card-value.entrada{color:var(--entrada);}
+.card-value.saida{color:var(--saida);}
+.card-sub{color:var(--text-muted);font-size:12px;margin-top:4px;}
+
+/* TABELA */
+.table-container{background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius-lg);overflow:hidden;}
+.table-header{padding:16px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+table{width:100%;border-collapse:collapse;}
+thead th{padding:12px 16px;text-align:left;font-size:12px;font-weight:600;
+  color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;
+  background:var(--bg-tertiary);border-bottom:1px solid var(--border);}
+tbody tr{border-bottom:1px solid var(--border);transition:var(--transition);}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:rgba(255,255,255,0.02);}
+td{padding:12px 16px;font-size:13px;vertical-align:middle;}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+.badge-entrada{background:rgba(63,185,80,0.15);color:var(--entrada);}
+.badge-saida{background:rgba(248,81,73,0.15);color:var(--saida);}
+.badge-org{background:rgba(88,166,255,0.15);color:var(--accent);}
+.badge-quit{background:rgba(188,140,255,0.15);color:var(--purple);}
+.badge-emp{background:rgba(210,153,34,0.15);color:var(--warning);}
+
+/* FILTROS */
+.filtros{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center;}
+.filtro-input{padding:8px 12px;background:var(--bg-tertiary);border:1px solid var(--border);
+  border-radius:var(--radius);color:var(--text-primary);font-size:13px;min-width:130px;transition:var(--transition);}
+.filtro-input:focus{outline:none;border-color:var(--accent);}
+.filtro-grupo{display:flex;align-items:center;gap:4px;}
+.filtro-grupo label{color:var(--text-muted);font-size:12px;white-space:nowrap;}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);
+  z-index:1000;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg-secondary);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:28px;width:100%;max-width:560px;
+  box-shadow:var(--shadow);max-height:90vh;overflow-y:auto;animation:slideUp 0.2s ease;}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.modal-title{font-size:16px;font-weight:600;}
+.modal-close{background:transparent;border:none;color:var(--text-secondary);
+  cursor:pointer;font-size:20px;padding:2px 6px;border-radius:4px;transition:var(--transition);}
+.modal-close:hover{color:var(--danger);}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;
+  padding-top:16px;border-top:1px solid var(--border);}
+
+/* CHAT */
+.chat-container{display:flex;flex-direction:column;height:calc(100vh - 200px);
+  background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;}
+.chat-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px;}
+.chat-msg{display:flex;gap:10px;max-width:85%;}
+.chat-msg.user{flex-direction:row-reverse;align-self:flex-end;}
+.chat-bubble{padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.6;}
+.chat-msg.bot .chat-bubble{background:var(--bg-tertiary);border:1px solid var(--border);border-bottom-left-radius:4px;}
+.chat-msg.user .chat-bubble{background:var(--accent);color:#0d1117;border-bottom-right-radius:4px;}
+.chat-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:14px;flex-shrink:0;background:var(--bg-tertiary);border:1px solid var(--border);}
+.chat-input-area{padding:16px;border-top:1px solid var(--border);display:flex;gap:8px;background:var(--bg-secondary);}
+.chat-input{flex:1;padding:10px 14px;background:var(--bg-tertiary);border:1px solid var(--border);
+  border-radius:var(--radius);color:var(--text-primary);font-size:14px;resize:none;}
+.chat-input:focus{outline:none;border-color:var(--accent);}
+
+/* PROGRESSO */
+.progress-bar{background:var(--bg-tertiary);border-radius:4px;height:8px;overflow:hidden;margin-top:8px;}
+.progress-fill{height:100%;background:var(--accent);border-radius:4px;transition:width 0.5s ease;}
+
+/* LOADING */
+.loading{display:inline-block;width:16px;height:16px;border:2px solid var(--border);
+  border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* TOAST */
+#toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;}
+.toast{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);
+  padding:12px 16px;min-width:280px;box-shadow:var(--shadow);animation:slideIn 0.3s ease;
+  display:flex;align-items:center;gap:10px;font-size:13px;}
+.toast.success{border-left:3px solid var(--success);}
+.toast.error{border-left:3px solid var(--danger);}
+.toast.info{border-left:3px solid var(--accent);}
+.toast.warning{border-left:3px solid var(--warning);}
+@keyframes slideIn{from{opacity:0;transform:translateX(100%);}to{opacity:1;transform:translateX(0);}}
+
+/* AI FAB */
+.ai-fab{position:fixed;bottom:80px;right:24px;width:50px;height:50px;
+  background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:50%;
+  border:none;cursor:pointer;font-size:20px;box-shadow:0 4px 20px rgba(88,166,255,0.4);
+  transition:var(--transition);display:flex;align-items:center;justify-content:center;z-index:500;}
+.ai-fab:hover{transform:scale(1.1);}
+
+/* ANALISE */
+.analise-card{background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:20px;margin-bottom:16px;}
+.analise-title{font-size:15px;font-weight:600;margin-bottom:12px;color:var(--accent);}
+.analise-item{display:flex;justify-content:space-between;align-items:center;
+  padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.analise-item:last-child{border-bottom:none;}
+.alerta-anomalia{background:rgba(210,153,34,0.1);border:1px solid rgba(210,153,34,0.3);
+  border-radius:var(--radius);padding:10px 14px;font-size:12px;color:var(--warning);margin-bottom:8px;}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px;}
+.tab{padding:10px 20px;cursor:pointer;color:var(--text-secondary);
+  border-bottom:2px solid transparent;font-size:13px;font-weight:500;transition:var(--transition);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+/* CHIPS */
+.chip{display:inline-flex;align-items:center;gap:4px;background:var(--bg-tertiary);
+  border:1px solid var(--border);border-radius:20px;padding:4px 10px;
+  font-size:12px;color:var(--text-secondary);}
+.chip-remove{cursor:pointer;color:var(--danger);font-size:14px;line-height:1;}
+
+/* NOMES LISTA */
+.nomes-lista{max-height:200px;overflow-y:auto;display:flex;flex-wrap:wrap;gap:6px;
+  background:var(--bg-tertiary);border-radius:var(--radius);padding:12px;border:1px solid var(--border);}
+.nome-chip{padding:6px 12px;border-radius:20px;border:1px solid var(--border);
+  background:var(--bg-secondary);cursor:pointer;font-size:12px;
+  color:var(--text-secondary);transition:var(--transition);}
+.nome-chip:hover{border-color:var(--accent);color:var(--accent);}
+.nome-chip.selecionado{background:var(--accent);color:#0d1117;border-color:var(--accent);}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:60px 20px;color:var(--text-muted);}
+.empty-icon{font-size:48px;margin-bottom:16px;}
+.empty-title{font-size:16px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;}
+
+/* SENHA AVISO */
+.senha-aviso{background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);
+  border-radius:var(--radius);padding:12px;margin-bottom:16px;color:var(--danger);font-size:13px;
+  display:flex;align-items:center;gap:12px;}
+
+/* EMPRÉSTIMO */
+.emp-card{background:var(--bg-card);border:1px solid var(--warning);
+  border-radius:var(--radius-lg);padding:20px;margin-bottom:16px;}
+.emp-card.quitado{border-color:var(--success);opacity:0.7;}
+.emp-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
+.emp-status{font-size:11px;font-weight:600;padding:3px 8px;border-radius:12px;}
+.emp-status.ativo{background:rgba(210,153,34,0.2);color:var(--warning);}
+.emp-status.quitado{background:rgba(63,185,80,0.2);color:var(--success);}
+
+/* SEPARADOR */
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0;}
+
+/* INFO BOX */
+.info-box{background:rgba(88,166,255,0.08);border:1px solid rgba(88,166,255,0.2);
+  border-radius:var(--radius);padding:12px;font-size:12px;color:var(--accent);margin-bottom:12px;}
+
+@media(max-width:768px){
+  .sidebar{width:60px;}
+  .nav-item span{display:none;}
+  .nav-label{display:none;}
+  .main{padding:12px;}
+  .cards-grid{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+<div id="toast-container"></div>
+
+<!-- AUTH -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <h1>💰 FinanceIA</h1>
+      <p>Gestão Financeira Inteligente</p>
+    </div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="trocarAbaAuth('login')">Entrar</div>
+      <div class="auth-tab" onclick="trocarAbaAuth('registro')">Registrar</div>
+    </div>
+    <div id="form-login">
+      <div class="form-group">
+        <label>Usuário</label>
+        <input type="text" id="login-user" placeholder="Seu usuário" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>Senha</label>
+        <input type="password" id="login-pass" placeholder="Sua senha"
+          onkeydown="if(event.key==='Enter')fazerLogin()">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="fazerLogin()" id="btn-login">Entrar</button>
+      <div id="alert-login" class="alert alert-error"></div>
+    </div>
+    <div id="form-registro" style="display:none">
+      <div class="form-group">
+        <label>Usuário</label>
+        <input type="text" id="reg-user" placeholder="Mínimo 3 caracteres">
+      </div>
+      <div class="form-group">
+        <label>Senha</label>
+        <input type="password" id="reg-pass" placeholder="Mínimo 8 caracteres">
+      </div>
+      <div class="form-group">
+        <label>Confirmar Senha</label>
+        <input type="password" id="reg-pass2" onkeydown="if(event.key==='Enter')fazerRegistro()">
+      </div>
+      <div class="info-box">
+        ⚠️ Seus dados são criptografados com sua senha. Se perdê-la, os dados serão inacessíveis após 90 dias.
+      </div>
+      <button class="btn btn-primary btn-full" onclick="fazerRegistro()" id="btn-reg">Criar Conta</button>
+      <div id="alert-reg" class="alert"></div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <div class="header">
+    <span class="header-logo">💰 FinanceIA</span>
+    <div class="header-right">
+      <span class="admin-badge" id="badge-admin" style="display:none">⚙️ ADMIN</span>
+      <span class="user-badge" id="badge-user">-</span>
+      <button class="btn btn-ghost btn-sm" onclick="abrirModalSenha()">🔑 Senha</button>
+      <button class="btn btn-ghost btn-sm" onclick="logout()">Sair</button>
+    </div>
+  </div>
+
+  <div class="app-body">
+    <!-- SIDEBAR USUÁRIO -->
+    <div class="sidebar" id="sidebar-usuario">
+  <div class="nav-section">
+    <div class="nav-label">Principal</div>
+    <button class="nav-item active" onclick="irPara('dashboard')" id="nav-dashboard">
+      <span class="nav-icon">📊</span><span>Dashboard</span>
+    </button>
+    <button class="nav-item" onclick="irPara('transacoes')" id="nav-transacoes">
+      <span class="nav-icon">💳</span><span>Transações</span>
+    </button>
+    <button class="nav-item" onclick="irPara('categorias')" id="nav-categorias">
+      <span class="nav-icon">🏷️</span><span>Categorias</span>
+    </button>
+    <button class="nav-item" onclick="irPara('emprestimos')" id="nav-emprestimos">
+      <span class="nav-icon">🤝</span><span>Empréstimos</span>
+    </button>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Análise</div>
+    <button class="nav-item" onclick="irPara('projecoes')" id="nav-projecoes">
+      <span class="nav-icon">📈</span><span>Projeções</span>
+    </button>
+    <button class="nav-item" onclick="irPara('chat')" id="nav-chat">
+      <span class="nav-icon">🤖</span><span>Chat IA</span>
+    </button>
+  </div>
+</div>
+
+    <!-- SIDEBAR ADMIN -->
+    <div class="sidebar" id="sidebar-admin" style="display:none">
+      <div class="nav-section">
+        <div class="nav-label">Administração</div>
+        <button class="nav-item active" onclick="irParaAdmin('admin-usuarios')" id="nav-admin-usuarios">
+          <span class="nav-icon">👥</span><span>Usuários</span>
+        </button>
+        <button class="nav-item" onclick="irParaAdmin('admin-sistema')" id="nav-admin-sistema">
+          <span class="nav-icon">📊</span><span>Sistema</span>
+        </button>
+        <button class="nav-item" onclick="irParaAdmin('admin-logs')" id="nav-admin-logs">
+          <span class="nav-icon">📋</span><span>Logs</span>
+        </button>
+        <button class="nav-item" onclick="irParaAdmin('admin-modelos')" id="nav-admin-modelos">
+          <span class="nav-icon">🤖</span><span>Modelos IA</span>
+        </button>
+        <button class="nav-item" onclick="irParaAdmin('admin-backup')" id="nav-admin-backup">
+          <span class="nav-icon">💾</span><span>Backup</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="main">
+      <div id="aviso-senha" class="senha-aviso" style="display:none">
+        🔐 Troque sua senha padrão agora!
+        <button class="btn btn-danger btn-sm" onclick="abrirModalSenha()">Trocar Senha</button>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-header">
+          <h2 class="page-title">📊 Dashboard</h2>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="carregarDashboard()">↻ Atualizar</button>
+            <button class="btn btn-primary btn-sm" onclick="abrirModalTransacao()">+ Transação</button>
+          </div>
+        </div>
+        <div class="cards-grid">
+          <div class="card">
+            <div class="card-label">💚 Entradas Totais</div>
+            <div class="card-value entrada" id="val-entrada">R$ 0,00</div>
+          </div>
+          <div class="card">
+            <div class="card-label">🔴 Saídas Totais</div>
+            <div class="card-value saida" id="val-saida">R$ 0,00</div>
+          </div>
+          <div class="card">
+            <div class="card-label">💰 Saldo Atual</div>
+            <div class="card-value" id="val-saldo" style="color:var(--accent)">R$ 0,00</div>
+          </div>
+          <div class="card">
+            <div class="card-label">📋 Transações</div>
+            <div class="card-value" id="val-qtd">0</div>
+          </div>
+        </div>
+        <div id="dash-alertas"></div>
+        <div class="table-container">
+          <div class="table-header">
+            <span style="font-weight:600">Últimas Transações</span>
+            <button class="btn btn-ghost btn-sm" onclick="irPara('transacoes')">Ver todas →</button>
+          </div>
+          <table>
+            <thead><tr>
+              <th>Data</th><th>Nome Fantasia</th><th>Categoria</th>
+              <th>Tipo</th><th>Valor</th><th></th>
+            </tr></thead>
+            <tbody id="tb-dash"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TRANSAÇÕES -->
+      <div class="page" id="page-transacoes">
+        <div class="page-header">
+          <h2 class="page-title">💳 Transações</h2>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm" onclick="abrirModalImportarPDF()">📄 Importar PDF</button>
+            <button class="btn btn-primary btn-sm" onclick="abrirModalTransacao()">+ Adicionar</button>
+          </div>
+        </div>
+        <!-- FILTROS -->
+        <div class="filtros">
+          <input class="filtro-input" id="f-nome" placeholder="🔍 Nome fantasia" oninput="filtrarTransacoes()">
+          <input class="filtro-input" id="f-desc" placeholder="📝 Descrição" oninput="filtrarTransacoes()">
+          <select class="filtro-input" id="f-tipo" onchange="filtrarTransacoes()">
+            <option value="">Todos os tipos</option>
+            <option value="entrada">Entrada</option>
+            <option value="saida">Saída</option>
+          </select>
+          <select class="filtro-input" id="f-cat" onchange="filtrarTransacoes()">
+            <option value="">Todas as categorias</option>
+          </select>
+          <div class="filtro-grupo">
+            <label>Valor:</label>
+            <input class="filtro-input" type="number" id="f-val-min" placeholder="Min R$"
+              style="width:100px" oninput="filtrarTransacoes()" step="0.01" min="0">
+            <span style="color:var(--text-muted)">—</span>
+            <input class="filtro-input" type="number" id="f-val-max" placeholder="Max R$"
+              style="width:100px" oninput="filtrarTransacoes()" step="0.01" min="0">
+          </div>
+          <input class="filtro-input" type="date" id="f-data-ini" onchange="filtrarTransacoes()">
+          <input class="filtro-input" type="date" id="f-data-fim" onchange="filtrarTransacoes()">
+          <button class="btn btn-ghost btn-sm" onclick="limparFiltros()">✕ Limpar</button>
+        </div>
+        <div class="table-container">
+          <div class="table-header">
+            <span style="font-weight:600" id="t-count">0 transações</span>
+            <div style="display:flex;gap:8px">
+              <span id="t-total-filtro" style="color:var(--text-muted);font-size:12px;align-self:center"></span>
+              <button class="btn btn-ghost btn-sm" onclick="abrirAnaliseRapida()">🤖 Analisar IA</button>
+            </div>
+          </div>
+          <table>
+            <thead><tr>
+              <th>ID</th><th>Data</th><th>Nome Fantasia</th><th>Descrição</th>
+              <th>Categoria</th><th>Tipo</th><th>Valor</th><th>Ações</th>
+            </tr></thead>
+            <tbody id="tb-trans"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CATEGORIAS -->
+      <div class="page" id="page-categorias">
+        <div class="page-header">
+          <h2 class="page-title">🏷️ Categorias</h2>
+          <button class="btn btn-primary btn-sm" onclick="abrirModalCategoria()">+ Nova Categoria</button>
+        </div>
+        <div id="lista-categorias"></div>
+      </div>
+
+      <!-- EMPRÉSTIMOS -->
+      <div class="page" id="page-emprestimos">
+        <div class="page-header">
+          <h2 class="page-title">🤝 Empréstimos</h2>
+          <button class="btn btn-warning btn-sm" onclick="abrirModalCategoria(null,'emprestimo')">+ Novo Empréstimo</button>
+        </div>
+        <div class="tabs">
+          <div class="tab active" onclick="trocarTabEmp('ativos',this)">Ativos</div>
+          <div class="tab" onclick="trocarTabEmp('quitados',this)">Histórico Quitados</div>
+        </div>
+        <div id="emp-ativos"></div>
+        <div id="emp-quitados" style="display:none"></div>
+      </div>
+
+      <!-- PROJEÇÕES -->
+      <div class="page" id="page-projecoes">
+        <div class="page-header">
+          <h2 class="page-title">📈 Projeções & Análises</h2>
+          <button class="btn btn-primary btn-sm" onclick="carregarProjecoes()">🔄 Atualizar</button>
+        </div>
+        <div class="tabs">
+          <div class="tab active" onclick="trocarTabProj('tendencia',this)">Tendências</div>
+          <div class="tab" onclick="trocarTabProj('projecao',this)">Projeção 3 Meses</div>
+          <div class="tab" onclick="trocarTabProj('historico',this)">Histórico Mensal</div>
+        </div>
+        <div id="proj-tendencia"></div>
+        <div id="proj-projecao" style="display:none"></div>
+        <div id="proj-historico" style="display:none"></div>
+      </div>
+
+      <!-- CHAT -->
+      <div class="page" id="page-chat">
+        <div class="page-header">
+          <h2 class="page-title">🤖 Assistente IA</h2>
+          <span style="color:var(--text-muted);font-size:12px" id="modelo-info"></span>
+        </div>
+        <div class="chat-container">
+          <div class="chat-messages" id="chat-msgs">
+            <div class="chat-msg bot">
+              <div class="chat-avatar">🤖</div>
+              <div class="chat-bubble">
+                Olá! Sou seu assistente financeiro inteligente.<br>
+                Posso ajudá-lo a registrar transações, analisar gastos,
+                verificar categorias, empréstimos e fazer projeções.<br><br>
+                Como posso ajudá-lo hoje?
+              </div>
+            </div>
+          </div>
+          <div class="chat-input-area">
+            <textarea class="chat-input" id="chat-input" rows="1"
+              placeholder="Ex: Gastei R$ 150 no mercado hoje | Como está minha categoria Alimentação?"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();enviarChat()}"
+              oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+            <button class="btn btn-primary" onclick="enviarChat()">Enviar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADMIN PÁGINAS -->
+      <div class="page" id="page-admin-usuarios">
+        <div class="page-header">
+          <h2 class="page-title">👥 Gerenciar Usuários</h2>
+          <button class="btn btn-ghost btn-sm" onclick="carregarAdminUsuarios()">↻ Atualizar</button>
+        </div>
+        <div id="admin-usuarios-content"></div>
+      </div>
+      <div class="page" id="page-admin-sistema">
+        <div class="page-header"><h2 class="page-title">📊 Estatísticas do Sistema</h2></div>
+        <div id="admin-sistema-content"></div>
+      </div>
+      <div class="page" id="page-admin-logs">
+        <div class="page-header">
+          <h2 class="page-title">📋 Logs de Erro</h2>
+          <button class="btn btn-ghost btn-sm" onclick="carregarAdminLogs()">↻ Atualizar</button>
+        </div>
+        <div id="admin-logs-content"></div>
+      </div>
+      <div class="page" id="page-admin-modelos">
+        <div class="page-header">
+          <h2 class="page-title">🤖 Configurar Modelos IA</h2>
+          <button class="btn btn-ghost btn-sm" onclick="carregarAdminModelos()">↻ Atualizar</button>
+        </div>
+        <div id="admin-modelos-content"></div>
+      </div>
+      <div class="page" id="page-admin-backup">
+        <div class="page-header"><h2 class="page-title">💾 Backup & Restauração</h2></div>
+        <div id="admin-backup-content"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button class="ai-fab" id="ai-fab-btn" onclick="abrirAnaliseRapida()" style="display:none">🤖</button>
+
+<!-- ===== MODAIS ===== -->
+
+<!-- Modal Transação -->
+<div class="modal-overlay" id="modal-transacao">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="mt-title">Nova Transação</span>
+      <button class="modal-close" onclick="fecharModal('modal-transacao')">×</button>
+    </div>
+    <div class="form-group">
+      <label>Tipo</label>
+      <select class="filtro-input" id="mt-tipo" style="width:100%">
+        <option value="saida">Saída (Gasto)</option>
+        <option value="entrada">Entrada (Receita)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Valor (R$)</label>
+      <input type="number" id="mt-valor" class="filtro-input" style="width:100%" step="0.01" min="0.01" placeholder="0,00">
+    </div>
+    <div class="form-group">
+      <label>Nome Fantasia</label>
+      <input type="text" id="mt-nome" class="filtro-input" style="width:100%" placeholder="Ex: Supermercado Extra, Salário...">
+    </div>
+    <div class="form-group">
+      <label>Descrição</label>
+      <input type="text" id="mt-desc" class="filtro-input" style="width:100%" placeholder="Detalhes da transação">
+    </div>
+    <div class="form-group">
+      <label>Categoria (opcional)</label>
+      <select class="filtro-input" id="mt-cat" style="width:100%">
+        <option value="">Sem categoria</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Data</label>
+      <input type="date" id="mt-data" class="filtro-input" style="width:100%">
+    </div>
+    <div id="mt-alert" class="alert"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-transacao')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarTransacao()" id="btn-salvar-t">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Mover Transação de Categoria -->
+<div class="modal-overlay" id="modal-mover-trans">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">↔️ Mover / Atribuir Categoria</span>
+      <button class="modal-close" onclick="fecharModal('modal-mover-trans')">×</button>
+    </div>
+    <p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px" id="mmt-info"></p>
+    <div class="form-group">
+      <label>Selecione a Categoria de Destino</label>
+      <select class="filtro-input" id="mmt-cat" style="width:100%">
+        <option value="">Sem categoria (remover)</option>
+      </select>
+    </div>
+    <div id="mmt-alert" class="alert"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-mover-trans')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarMoverTransacao()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Categoria -->
+<div class="modal-overlay" id="modal-categoria">
+  <div class="modal" style="max-width:620px">
+    <div class="modal-header">
+      <span class="modal-title" id="mc-title">Nova Categoria</span>
+      <button class="modal-close" onclick="fecharModal('modal-categoria')">×</button>
+    </div>
+    <div class="form-group">
+      <label>Nome da Categoria</label>
+      <input type="text" id="mc-nome" class="filtro-input" style="width:100%"
+        placeholder="Ex: Alimentação, Moradia, Empréstimo Banco X...">
+    </div>
+    <div class="form-group">
+      <label>Tipo</label>
+      <select class="filtro-input" id="mc-tipo" style="width:100%" onchange="toggleTipoCategoria()">
+        <option value="organizacao">📁 Organização — Agrupar transações</option>
+        <option value="quitacao">💳 Quitação — Controlar dívida</option>
+        <option value="emprestimo">🤝 Empréstimo — Controlar empréstimo</option>
+      </select>
+    </div>
+    <div class="form-group" id="fg-meta-valor" style="display:none">
+      <label>Valor Total da Dívida (R$)</label>
+      <input type="number" id="mc-meta" class="filtro-input" style="width:100%" step="0.01" placeholder="0,00">
+    </div>
+    <!-- Campos específicos de Empréstimo -->
+    <div id="fg-emprestimo" style="display:none">
+      <div class="info-box">
+        🤝 Registre um empréstimo: valor recebido, juros e parcelas. O sistema calcula o total a pagar.
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group">
+          <label>Valor do Empréstimo (R$)</label>
+          <input type="number" id="mc-emp-valor" class="filtro-input" style="width:100%"
+            step="0.01" min="0" placeholder="0,00" oninput="calcularTotalEmprestimo()">
+        </div>
+        <div class="form-group">
+          <label>Juros (% ao mês)</label>
+          <input type="number" id="mc-emp-juros" class="filtro-input" style="width:100%"
+            step="0.01" min="0" value="0" placeholder="0 = sem juros" oninput="calcularTotalEmprestimo()">
+        </div>
+        <div class="form-group">
+          <label>Número de Parcelas</label>
+          <input type="number" id="mc-emp-parcelas" class="filtro-input" style="width:100%"
+            step="1" min="1" value="1" placeholder="1" oninput="calcularTotalEmprestimo()">
+        </div>
+        <div class="form-group">
+          <label>Desconto (R$)</label>
+          <input type="number" id="mc-emp-desconto" class="filtro-input" style="width:100%"
+            step="0.01" min="0" value="0" placeholder="0,00" oninput="calcularTotalEmprestimo()">
+        </div>
+      </div>
+      <div id="emp-resumo" style="background:var(--bg-tertiary);border-radius:var(--radius);
+        padding:12px;margin-bottom:12px;font-size:13px;display:none">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <span style="color:var(--text-muted)">Total com juros:</span>
+          <strong id="emp-total-juros">R$ 0,00</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <span style="color:var(--text-muted)">Desconto:</span>
+          <strong style="color:var(--success)" id="emp-total-desc">-R$ 0,00</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:6px">
+          <span style="font-weight:600">Total a pagar:</span>
+          <strong style="color:var(--warning);font-size:16px" id="emp-total-final">R$ 0,00</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px">
+          <span style="color:var(--text-muted)">Valor da parcela:</span>
+          <strong id="emp-parcela-val">R$ 0,00</strong>
+        </div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Descrição (opcional)</label>
+      <input type="text" id="mc-desc" class="filtro-input" style="width:100%"
+        placeholder="Detalhes sobre esta categoria (o agente IA usa isso para entender o contexto)">
+    </div>
+    <!-- Nomes Fantasia -->
+    <div style="margin-top:8px">
+      <label style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:13px">
+        Nomes Fantasia Vinculados
+        <span style="color:var(--text-muted);font-size:11px">(transações automáticas)</span>
+      </label>
+      <div id="mc-nomes-selecionados" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;min-height:28px"></div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input type="text" id="mc-nome-input" class="filtro-input" style="flex:1"
+          placeholder="Digite ou selecione nome fantasia"
+          oninput="filtrarNomesSugestao()"
+          onkeydown="if(event.key==='Enter'){adicionarNomeManual();event.preventDefault()}">
+        <button class="btn btn-ghost btn-sm" onclick="adicionarNomeManual()">+ Adicionar</button>
+      </div>
+      <div id="mc-sugestoes-nomes" class="nomes-lista"></div>
+    </div>
+    <div id="mc-alert" class="alert"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-categoria')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarCategoria()" id="btn-salvar-c">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Detalhe Categoria -->
+<div class="modal-overlay" id="modal-cat-detalhe">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-header">
+      <span class="modal-title" id="mcd-title">Detalhes</span>
+      <button class="modal-close" onclick="fecharModal('modal-cat-detalhe')">×</button>
+    </div>
+    <div id="mcd-content"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-cat-detalhe')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Detalhe Empréstimo -->
+<div class="modal-overlay" id="modal-emp-detalhe">
+  <div class="modal" style="max-width:680px">
+    <div class="modal-header">
+      <span class="modal-title" id="med-title">Detalhes do Empréstimo</span>
+      <button class="modal-close" onclick="fecharModal('modal-emp-detalhe')">×</button>
+    </div>
+    <div id="med-content"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-emp-detalhe')">Fechar</button>
+      <button class="btn btn-success" id="btn-quitar-emp" onclick="quitarEmprestimo()" style="display:none">
+        ✓ Marcar como Quitado
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal PDF -->
+<div class="modal-overlay" id="modal-pdf">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">📄 Importar Extrato PDF</span>
+      <button class="modal-close" onclick="fecharModal('modal-pdf')">×</button>
+    </div>
+    <div class="info-box">
+      O agente identifica entradas (+) e saídas (-) automaticamente.
+      Transações já existentes são ignoradas.
+    </div>
+    <div class="form-group">
+      <label>Arquivo PDF do Extrato</label>
+      <input type="file" id="pdf-file" accept=".pdf" class="filtro-input" style="width:100%">
+    </div>
+    <div id="pdf-progress" style="display:none">
+      <div style="display:flex;align-items:center;gap:8px;color:var(--text-secondary)">
+        <div class="loading"></div> Processando PDF...
+      </div>
+    </div>
+    <div id="pdf-resultado"></div>
+    <div id="pdf-alert" class="alert"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-pdf')">Cancelar</button>
+      <button class="btn btn-primary" onclick="importarPDF()" id="btn-import-pdf">Processar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Análise IA -->
+<div class="modal-overlay" id="modal-analise">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header">
+      <span class="modal-title" id="analise-title">🤖 Análise IA</span>
+      <button class="modal-close" onclick="fecharModal('modal-analise')">×</button>
+    </div>
+    <div id="analise-content"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-analise')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Senha -->
+<div class="modal-overlay" id="modal-senha">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">🔑 Alterar Senha</span>
+      <button class="modal-close" onclick="fecharModal('modal-senha')">×</button>
+    </div>
+    <div class="alert alert-error" style="display:block;margin-bottom:16px">
+      ⚠️ Se perder a nova senha, seus dados serão inacessíveis permanentemente.
+    </div>
+    <div class="form-group"><label>Senha Atual</label>
+      <input type="password" id="s-atual" class="filtro-input" style="width:100%"></div>
+    <div class="form-group"><label>Nova Senha (mín. 8 caracteres)</label>
+      <input type="password" id="s-nova" class="filtro-input" style="width:100%"></div>
+    <div class="form-group"><label>Confirmar Nova Senha</label>
+      <input type="password" id="s-conf" class="filtro-input" style="width:100%"></div>
+    <div id="s-alert" class="alert"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-senha')">Cancelar</button>
+      <button class="btn btn-primary" onclick="alterarSenha()">Alterar Senha</button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

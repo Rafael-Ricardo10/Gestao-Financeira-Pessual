@@ -1,0 +1,12 @@
+PyQt5
+matplotlib
+numpy
+python-dateutil
+yfinance
+pdfplumber
+requests
+psutil
+# opcional (OCR de extratos): pytesseract, pillow
+# sistema: libtoxcore (Debian/Ubuntu: sudo apt install libtoxcore-dev)
+# Binário: ./build_linux.sh  -> dist/RRFS-Financas (ou use o já compilado). Coloque seu finance_icon.png ao lado antes.
+#Portas: UDP 33700-33799 (Tox) e UDP+TCP 33698 (descoberta/enlace direto).

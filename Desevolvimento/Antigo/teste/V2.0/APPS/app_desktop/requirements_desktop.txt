@@ -1,0 +1,9 @@
+customtkinter
+Pillow
+pystray
+requests
+requests[socks]
+stem
+cryptography
+argon2-cffi
+PyJWT

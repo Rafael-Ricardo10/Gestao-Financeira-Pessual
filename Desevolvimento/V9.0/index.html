@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RRFS Finanças: controle de gastos sem servidor</title>
+<meta name="description" content="Gerencie seus gastos em vários aparelhos, sincronizando de ponta a ponta, sem servidor central. Código aberto para Linux e Windows.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+<style>
+:root{--bg:#eef2ef;--card:#fff;--ink:#16302a;--mute:#53675f;--line:#cbd8d1;--acc:#0e6a85;--pos:#2c7a4b;--neg:#b3412f;--code:#e3ebe7}
+@media (prefers-color-scheme:dark){:root{--bg:#10201c;--card:#172b26;--ink:#e6efeb;--mute:#9bb0a8;--line:#2a443c;--acc:#5cc0dc;--pos:#6fcf97;--neg:#f08a76;--code:#0c1916}}
+*{box-sizing:border-box}
+html{scroll-padding-top:1rem}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:860px;margin:0 auto;padding:clamp(1.2rem,4vw,3rem) 1.2rem 3rem}
+h1,h2{font-family:Georgia,"Times New Roman",serif;line-height:1.15;margin:0 0 .6em}
+h1{font-size:clamp(2rem,6vw,3.2rem)}
+h2{font-size:1.7rem;margin-top:2.6em}
+p{max-width:68ch;margin:.6em 0}
+a{color:var(--acc)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.lead{font-size:1.2rem;color:var(--mute)}
+.btn{display:inline-block;background:var(--acc);color:var(--bg);padding:.7em 1.2em;border-radius:6px;font-weight:700;text-decoration:none;margin:.4em .6em .4em 0}
+.btn.alt{background:transparent;color:var(--acc);border:2px solid var(--acc)}
+.ledger{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:2rem 0}
+.dev{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:.9rem 1rem;font-size:.95rem}
+.dev h3{margin:0 0 .5rem;font-size:1rem}
+.dev .sub{color:var(--mute);font-size:.85rem;margin:0 0 .6rem}
+.row{display:flex;justify-content:space-between;gap:.8rem;border-top:1px solid var(--line);padding:.3rem 0}
+.neg{color:var(--neg)}.pos{color:var(--pos)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem}
+.box{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:1rem 1.1rem}
+.box h3{margin:.1em 0 .3em;font-size:1.05rem}
+.box p{margin:0;color:var(--mute);font-size:.95rem}
+pre{background:var(--code);border-radius:8px;padding:.9rem 1rem;overflow-x:auto;font:14px/1.5 ui-monospace,Menlo,Consolas,monospace;margin:.5rem 0}
+.cp{font:inherit;font-size:.85rem;background:none;border:1px solid var(--line);color:var(--ink);border-radius:5px;padding:.2em .7em;cursor:pointer}
+table{border-collapse:collapse;width:100%;font-size:.95rem}
+td,th{text-align:left;padding:.5rem .6rem;border-top:1px solid var(--line)}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9em;word-break:break-all}
+footer{margin-top:3rem;color:var(--mute);font-size:.9rem}
+@media (max-width:560px){.ledger{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+<h1>Seus gastos em todos os seus aparelhos, sem servidor no meio.</h1>
+<p class="lead">O RRFS Finanças sincroniza seus lançamentos entre o computador de casa e o do escritório, de ponta a ponta. Seus dados ficam com você, cifrados.</p>
+<a class="btn" href="#baixar">Baixar</a><a class="btn alt" href="https://github.com/SEU_USUARIO/RRFS_Gastos_Pessoais">Ver o código</a>
+
+<div class="ledger" aria-label="Exemplo: o mesmo lançamento aparece nos dois aparelhos">
+ <div class="dev"><h3>Computador de casa</h3><p class="sub">lançou às 12h10, sem internet</p>
+  <div class="row"><span>Mercado</span><span class="neg">- R$ 150,50</span></div>
+  <div class="row"><span>Salário</span><span class="pos">+ R$ 5.000,00</span></div></div>
+ <div class="dev"><h3>Computador do escritório</h3><p class="sub">recebeu quando se reencontraram</p>
+  <div class="row"><span>Mercado</span><span class="neg">- R$ 150,50</span></div>
+  <div class="row"><span>Salário</span><span class="pos">+ R$ 5.000,00</span></div></div>
+</div>
+
+<h2>O que você ganha</h2>
+<div class="grid">
+ <div class="box"><h3>Sem servidor central</h3><p>Os dados ficam só nos seus aparelhos. Não há conta nem nuvem do desenvolvedor.</p></div>
+ <div class="box"><h3>Funciona offline</h3><p>Use sem internet. Os aparelhos sincronizam quando se encontram, na rede local ou pela internet.</p></div>
+ <div class="box"><h3>Cifrado de ponta a ponta</h3><p>Banco cifrado em disco e comunicação cifrada entre aparelhos. Nem o desenvolvedor vê seus dados.</p></div>
+ <div class="box"><h3>Importa seu extrato</h3><p>Arquivos CSV de qualquer banco e PDF. Categorias, orçamentos, metas, empréstimos e relatórios.</p></div>
+</div>
+
+<h2>Como funciona</h2>
+<p>Seu <strong>usuário e senha</strong> geram as chaves da conta. Quem digita os mesmos em outro aparelho entra na mesma rede e recebe os dados. A comunicação usa o protocolo aberto <a href="https://tox.chat/">Tox</a>.</p>
+<p>Quando a rede bloqueia as portas padrão, o app tenta relays TCP, inclusive pela porta 443. Isso dificulta bloqueios, mas não garante contra censura.</p>
+
+<h2>Transparência: o que você precisa saber</h2>
+<div class="grid">
+ <div class="box"><h3>Senha sem recuperação</h3><p>A senha é a chave dos dados. Use uma frase longa e guarde-a.</p></div>
+ <div class="box"><h3>Você cuida do backup</h3><p>Use mais de um aparelho e exporte o backup cifrado para um lugar seguro.</p></div>
+ <div class="box"><h3>Nós públicos para se achar</h3><p>Pela internet, os aparelhos usam nós públicos do Tox para se localizar. Eles não recebem seus dados, mas seu IP pode aparecer.</p></div>
+ <div class="box"><h3>Sem coleta nenhuma</h3><p>Sem anúncios, sem rastreamento. O código é aberto para você conferir.</p></div>
+</div>
+
+<h2 id="baixar">Baixar e instalar</h2>
+<p>O instalador copia o app para a sua pasta pessoal, cria o atalho no menu e o início automático. Seus dados nunca são apagados ao atualizar.</p>
+<h3>Linux (Debian, Ubuntu e derivados)</h3>
+<pre id="lx">git clone https://github.com/SEU_USUARIO/RRFS_Gastos_Pessoais.git
+cd RRFS_Gastos_Pessoais
+chmod +x install.sh &amp;&amp; ./install.sh</pre>
+<button class="cp" data-alvo="lx">Copiar comandos</button>
+<h3>Windows 10 e 11 (experimental)</h3>
+<p>Baixe o projeto em <a href="https://github.com/SEU_USUARIO/RRFS_Gastos_Pessoais/archive/refs/heads/main.zip">ZIP</a>, extraia e dê dois cliques em <code>install.bat</code>. Ainda não foi testado de ponta a ponta: se falhar, abra uma Issue.</p>
+
+<h2>Status</h2>
+<table>
+<tr><td>Linux</td><td>Em uso e testado</td></tr>
+<tr><td>Windows</td><td>Instalador experimental</td></tr>
+<tr><td>Android</td><td>Interface pronta, APK em testes</td></tr>
+<tr><td>iPhone</td><td>Não previsto por enquanto</td></tr>
+<tr><td>Bancos</td><td>Testado com extratos do Sicredi; outros bancos precisam de testes</td></tr>
+</table>
+<p>Projeto novo e em desenvolvimento. Encontrou um problema? <a href="https://github.com/SEU_USUARIO/RRFS_Gastos_Pessoais/issues">Abra uma Issue</a>.</p>
+
+<h2>Apoie o projeto</h2>
+<p>Código aberto e feito no tempo livre. Qualquer valor ajuda.</p>
+<table>
+<tr><td>PIX</td><td><code>0cd822ec-e5a8-48cb-b17f-a9c4233c7b59</code></td></tr>
+<tr><td>Bitcoin</td><td><code>bc1qqz3l07skhpvh4k5dzhcgyh342c76f2y4vmka27</code></td></tr>
+</table>
+
+<footer>Agradecimento à comunidade do <a href="https://github.com/TokTok/c-toxcore">Tox (c-toxcore)</a>, que tornou este projeto possível.</footer>
+</main>
+<script>
+document.querySelectorAll('.cp').forEach(function(b){b.addEventListener('click',function(){
+ var t=document.getElementById(b.dataset.alvo).textContent;
+ (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){b.textContent='Copiado';},function(){b.textContent='Selecione e copie';});
+ setTimeout(function(){b.textContent='Copiar comandos';},2000);});});
+</script>
+</body>
+</html>

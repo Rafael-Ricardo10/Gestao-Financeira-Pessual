@@ -1,0 +1,25 @@
+projeto/
+│
+├── app.py                    # Arquivo principal (execução)
+├── modulos/
+│   ├── __init__.py
+│   ├── database.py           # Banco de dados e migrações
+│   ├── models.py             # Classes de dados
+│   ├── finance_utils.py      # Utilitários financeiros
+│   ├── pdf_parser.py         # Parser de extratos PDF
+│   └── logs.py               # Sistema de logs
+│
+└── interface/
+    ├── __init__.py
+    ├── main_window.py        # Janela principal
+    ├── dialogs/
+    │   ├── __init__.py
+    │   ├── transaction_dialogs.py   # Diálogos de transações
+    │   ├── category_dialogs.py      # Diálogos de categorias
+    │   ├── note_dialogs.py          # Diálogos de notas
+    │   ├── goal_dialogs.py          # Diálogos de metas
+    │   ├── report_dialogs.py        # Relatórios e gráficos
+    │   └── ai_dialogs.py            # Assistente de IA
+    └── widgets/
+        ├── __init__.py
+        └── ai_widget.py             # Widget do assistente IA

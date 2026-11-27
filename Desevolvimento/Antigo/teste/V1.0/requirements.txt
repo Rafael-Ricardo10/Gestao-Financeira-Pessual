@@ -1,0 +1,14 @@
+flask
+flask-login
+flask-socketio
+flask-limiter
+cryptography
+argon2-cffi
+pyjwt
+requests
+pdfplumber
+Pillow
+pytesseract
+pdf2image
+waitress
+redis

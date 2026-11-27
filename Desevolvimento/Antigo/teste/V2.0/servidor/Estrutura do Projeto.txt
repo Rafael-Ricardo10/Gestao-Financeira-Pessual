@@ -1,0 +1,19 @@
+/
+├── app.py
+├── requirements.txt
+├── dados/
+│   ├── logs/
+│   └── usuarios/
+└── modulos/
+    ├── __init__.py
+    ├── crypto.py
+    ├── auth.py
+    ├── database.py
+    ├── agente.py
+    ├── transacoes.py
+    ├── categorias.py
+    ├── cache.py
+    ├── ssl_config.py
+    ├── pdf_parser.py
+    ├── admin.py
+    └── logs.py

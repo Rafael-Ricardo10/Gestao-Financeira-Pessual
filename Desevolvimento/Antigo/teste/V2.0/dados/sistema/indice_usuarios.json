@@ -1,0 +1,28 @@
+{
+  "admin_741069c7997396a7": {
+    "user_id": "admin_741069c7997396a7",
+    "username": "admin",
+    "hash_senha": "$argon2id$v=19$m=65536,t=3,p=4$9pCUIpHFnr7rAATkM6b6eA$0RHWZcTN0u115gUV3ZawCh3jcRhgZAMTZUy77baAGUU",
+    "salt": "db84692bfd2572a024f33008b61a55ef6b627f094fb3e17f6cbfa6ef2649ac42",
+    "salt_chave": "2dfe6fb373bfcf446251a7ee15a0d7c30cc83d2cf65e461741aeaedab3fd6267",
+    "is_admin": true,
+    "ativo": true,
+    "suspenso": false,
+    "criado_em": "2026-04-25T23:37:51.103914",
+    "ultimo_acesso": "2026-04-25T23:38:06.399767",
+    "deve_trocar_senha": false
+  },
+  "63069c547cbe45a5b0807f8af81fedb1": {
+    "user_id": "63069c547cbe45a5b0807f8af81fedb1",
+    "username": "Rafael",
+    "hash_senha": "$argon2id$v=19$m=65536,t=3,p=4$90mImTI7YLhdIa0G8gc1Hg$Dn5AC9iqxRJkNxo24GRLWqOtQMb9901c5nUooeWOjVI",
+    "salt": "e0f1165f9abad03fb3a07e1ce94c16a9eb9d08aa802c2760c16b6b9d71f6da5e",
+    "salt_chave": "e191bf85dd1a102625220714778d1a9a7d9d7b8744318e58867926009fd3723d",
+    "is_admin": false,
+    "ativo": true,
+    "suspenso": false,
+    "criado_em": "2026-04-25T23:40:08.654941",
+    "ultimo_acesso": "2026-04-25T23:40:21.762106",
+    "deve_trocar_senha": false
+  }
+}

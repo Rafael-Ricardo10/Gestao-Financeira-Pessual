@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="theme-color" content="#0d1117">
+<title>Configurações · RRFS Finanças</title>
+<style>{% raw %}
+:root{--bg:#0d1117;--s1:#151b23;--s2:#1c242f;--ln:#27313e;--tx:#dde5ee;--mt:#8794a6;--in:#4fd1a5;--out:#f2877b;--ac:#7aa2ff;--wn:#e6bf68;--r:10px;color-scheme:dark}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:grid;grid-template-columns:208px minmax(0,1fr);min-height:100vh}
+body.solo{display:block}
+a{color:var(--ac)}
+.rail{position:sticky;top:0;height:100vh;padding:20px 14px;background:var(--s1);border-right:1px solid var(--ln);display:flex;flex-direction:column;gap:4px}
+.rail .logo{font-weight:700;font-size:17px;padding:0 10px 14px;letter-spacing:.2px}
+.rail .logo small{display:block;font-weight:400;color:var(--mt);font-size:12px}
+.rail a{color:var(--mt);text-decoration:none;padding:9px 12px;border-radius:8px}
+.rail a:hover{background:var(--s2);color:var(--tx)}
+.rail a.on{background:var(--s2);color:var(--tx);box-shadow:inset 3px 0 0 var(--ac)}
+.rail .sp{flex:1}
+.rail .who{padding:10px 12px;color:var(--mt);font-size:13px;word-break:break-all}
+main{padding:26px clamp(14px,3vw,34px) 60px;max-width:1100px;width:100%}
+h1{font-size:23px;margin:0 0 4px}
+h2{font-size:16px;margin:0 0 12px}
+.sub{color:var(--mt);margin:0 0 20px}
+.top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:18px}
+.card{background:var(--s1);border:1px solid var(--ln);border-radius:var(--r);padding:16px 18px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));margin-bottom:14px}
+.cols{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));margin-bottom:14px}
+.big{font-size:26px;font-weight:650;font-variant-numeric:tabular-nums;margin-top:2px}
+.lbl{color:var(--mt);font-size:13px}
+.in{color:var(--in)}.out{color:var(--out)}.mt{color:var(--mt)}.wn{color:var(--wn)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row.sp{justify-content:space-between}
+.btn{font:inherit;color:var(--tx);background:var(--s2);border:1px solid var(--ln);border-radius:8px;padding:8px 14px;cursor:pointer}
+.btn:hover{border-color:var(--mt)}
+.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.rail a:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.btn.pri{background:var(--ac);border-color:var(--ac);color:#0b1020;font-weight:600}
+.btn.dng{color:var(--out)}
+.btn.sm{padding:4px 10px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:default}
+input,select,textarea{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--ln);border-radius:8px;padding:8px 10px;width:100%}
+input[type=checkbox],input[type=radio]{width:auto;accent-color:var(--ac)}
+input[type=file]{padding:6px}
+label.f{display:block;margin-bottom:12px;color:var(--mt);font-size:13px}
+label.f>input,label.f>select,label.f>textarea{margin-top:4px;color:var(--tx);font-size:15px}
+.two{display:grid;gap:12px;grid-template-columns:1fr 1fr}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th{font-weight:500;color:var(--mt);text-align:left;font-size:13px}
+th,td{padding:9px 10px;border-bottom:1px solid var(--ln);vertical-align:middle}
+td.n,th.n{text-align:right;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+.pill{display:inline-block;font-size:12px;padding:1px 9px;border-radius:99px;border:1px solid var(--ln);color:var(--mt)}
+.pill.ok{color:var(--in);border-color:#25594a}.pill.bad{color:var(--out);border-color:#6b3a35}.pill.wn{color:var(--wn);border-color:#6a5a2b}
+.bar{height:8px;background:var(--s2);border-radius:99px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--ac);border-radius:99px}
+.empty{color:var(--mt);padding:22px;text-align:center}
+dialog{background:var(--s1);color:var(--tx);border:1px solid var(--ln);border-radius:14px;padding:0;width:min(560px,94vw);max-height:92vh}
+dialog.wide{width:min(860px,96vw)}
+dialog::backdrop{background:rgba(3,6,10,.7)}
+dialog>form,dialog>div.in2{padding:20px 22px;max-height:90vh;overflow:auto}
+dialog h2{font-size:18px;margin-bottom:14px}
+.acts{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:99;pointer-events:none}
+#toast div{background:var(--s2);border:1px solid var(--ln);padding:10px 16px;border-radius:10px;box-shadow:0 6px 24px #0008}
+#toast div.err{border-color:#6b3a35;color:var(--out)}
+.note{background:var(--s2);border-left:3px solid var(--ac);padding:10px 14px;border-radius:6px;color:var(--mt);font-size:14px;margin-bottom:14px}
+.mono{font-family:ui-monospace,Consolas,monospace;font-size:13px;word-break:break-all}
+@media(max-width:760px){
+ body{display:block}
+ .rail{position:static;height:auto;flex-direction:row;overflow-x:auto;padding:10px;gap:2px;border-right:0;border-bottom:1px solid var(--ln)}
+ .rail .logo,.rail .who,.rail .sp{display:none}
+ .rail a{white-space:nowrap;padding:8px 11px}
+ .rail a.on{box-shadow:inset 0 -3px 0 var(--ac)}
+ .two{grid-template-columns:1fr}
+ .big{font-size:22px}
+}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+
+.st{display:inline-flex;align-items:center;gap:7px}
+.st i{width:9px;height:9px;border-radius:50%;background:var(--mt)}
+.st.on i{background:var(--in)}.st.bad i{background:var(--out)}
+.key{display:grid;gap:8px;margin-top:12px}
+.key textarea{font-family:ui-monospace,Consolas,monospace;font-size:13px;resize:none;height:84px}
+.dv{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:11px 0;border-bottom:1px solid var(--ln)}
+.dv:last-child{border:0}
+.dv.pend{background:#e6bf6812;margin:0 -10px;padding:11px 10px;border-radius:8px;border:1px solid #6a5a2b}
+ol.steps{margin:0 0 14px;padding-left:20px;color:var(--mt)}
+ol.steps li{margin:3px 0}
+{% endraw %}</style></head>
+<body>
+<nav class="rail" aria-label="Menu"><div class="logo">RRFS Finanças<small>Servidor web</small></div>
+<a href="/dashboard">Painel</a><a href="/transacoes">Transações</a><a href="/categorias">Categorias</a><a href="/emprestimos">Empréstimos</a><a href="/config">Configurações</a>
+<div class="sp"></div><div class="who">{{ usuario }}</div><a href="#" onclick="sair();return false">Sair</a></nav>
+
+<main>
+<h1>Configurações</h1><p class="sub">Conta, aplicativo desktop e importação</p>
+
+<div class="card" style="margin-bottom:14px">
+<div class="row sp"><h2 style="margin:0">Rede de aparelhos</h2><span class="st" id="tst"><i></i><span>–</span></span></div>
+<p class="lbl" style="margin:6px 0 12px">Este servidor é um aparelho como os outros da sua conta. Entre com o <b>mesmo usuário e senha</b> nos apps e eles se encontram sozinhos (internet, NAT e rede local) e sincronizam entre si, com ou sem o servidor. Tudo trafega cifrado de ponta a ponta.</p>
+<div id="dg"></div>
+<div id="dl"><div class="empty">Procurando seus outros aparelhos…</div></div>
+<div class="row" style="margin-top:12px"><button class="btn sm pri" id="bsync">Sincronizar agora</button><button class="btn sm" id="bren">Renomear este aparelho</button><button class="btn sm" id="blat">Medir latência</button><button class="btn sm" id="bvar">Procurar em sub-redes</button><button class="btn sm" id="bid">Trocar identidade</button></div>
+<p class="lbl" id="vr" style="margin:8px 0 0"></p>
+<p class="lbl" id="inf" style="margin:10px 0 0"></p>
+</div>
+
+<div class="cols">
+<div class="card"><h2>Segurança</h2><div id="seg" class="lbl"></div>
+<label class="f row" style="color:var(--tx);margin-top:12px"><input type="checkbox" id="kmanter"> Manter esta conta ativa após reiniciar o servidor</label>
+<p class="lbl" style="margin:0 0 12px">Desmarcado (recomendado), as chaves ficam só na memória: depois de reiniciar, a sincronização só volta quando você entrar de novo. Marcado, um cofre cifrado com o segredo do servidor fica no disco.</p>
+<button class="btn sm dng" id="bbloq">Bloquear e esquecer chaves</button></div>
+<div class="card"><h2>Backup dos dados</h2>
+<div class="note">O arquivo .rrfs é cifrado com uma frase que você escolhe. Se perder o login, crie outro e importe o arquivo.</div>
+<label class="f">Frase do backup (mín. 12)<input type="password" id="bf" autocomplete="off"></label>
+<div class="row"><button class="btn sm pri" id="bexp">Exportar backup</button></div>
+<hr style="border:0;border-top:1px solid var(--ln);margin:14px 0">
+<label class="f">Arquivo .rrfs<input type="file" id="bfile" accept=".rrfs"></label>
+<button class="btn sm" id="bimp">Importar backup</button></div>
+</div>
+
+<details class="card" style="margin-bottom:14px"><summary>Avançado: redes isoladas / sub-redes</summary>
+<p class="lbl">Na mesma rede local os aparelhos se acham sozinhos. Para atravessar sub-redes sem internet, informe o IP de um aparelho alcançável e a chave dele (mostrada na tela de Rede do app).</p>
+<p class="lbl mono" id="meuno"></p>
+<p class="lbl" id="ifs"></p>
+<div class="two"><label class="f">IP<input id="nip" placeholder="192.168.1.20"></label><label class="f">Porta<input id="npt" placeholder="33700" inputmode="numeric"></label></div>
+<label class="f">Chave do nó (64 caracteres)<input id="ndh" class="mono"></label>
+<button class="btn sm" id="bno">Adicionar nó</button></details>
+
+<div class="cols">
+<form class="card" id="fs"><h2>Alterar senha</h2><div class="note">Seus dados são mantidos: o servidor migra tudo para as chaves novas (e confere a cópia antes de apagar a antiga). Os <b>outros aparelhos não mudam sozinhos</b>: neles, use “Alterar senha” com a mesma senha nova, ou saia e entre com a nova (os dados chegam por sincronização).</div>
+<label class="f">Senha atual<input type="password" id="sa" autocomplete="current-password" required></label>
+<label class="f">Nova senha<input type="password" id="sn" autocomplete="new-password" minlength="12" required></label>
+<button class="btn pri">Alterar senha</button></form>
+<form class="card" id="fi"><h2>Importar banco da versão desktop</h2>
+<div class="note">Envie o arquivo .db antigo. A senha é a do usuário dentro desse arquivo.</div>
+<label class="f">Arquivo .db<input type="file" id="ia" accept=".db,.sqlite,.sqlite3" required></label>
+<label class="f">Senha do arquivo antigo<input type="password" id="ip" autocomplete="off" required></label>
+<label class="f row" style="color:var(--tx)"><input type="checkbox" id="il"> Apagar os dados atuais antes de importar</label>
+<button class="btn pri">Importar</button></form>
+</div>
+</main>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<script>{% raw %}
+const $=(s,e=document)=>e.querySelector(s),$$=(s,e=document)=>[...e.querySelectorAll(s)];
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const brl=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const dbr=d=>d?String(d).slice(0,10).split('-').reverse().join('/'):'';
+const hoje=()=>{const d=new Date();return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)};
+const mesAtual=()=>hoje().slice(0,7);
+function toast(m,err){const b=$('#toast'),d=document.createElement('div');d.textContent=m;if(err)d.className='err';b.appendChild(d);setTimeout(()=>d.remove(),err?5000:2800)}
+async function api(u,o={}){
+  const h={};let b=o.body;
+  if(b!==undefined&&!(b instanceof FormData)){h['Content-Type']='application/json';b=JSON.stringify(b)}
+  const r=await fetch(u,{method:o.method||(b!==undefined?'POST':'GET'),headers:h,body:b,credentials:'same-origin'});
+  if(r.status===401&&!u.includes('/entrar')){location='/login';throw new Error('Sessão expirada')}
+  let d={};try{d=await r.json()}catch(e){}
+  if(!r.ok||(d&&d.erro))throw new Error((d&&(d.erro||d.mensagem))||('Erro '+r.status));
+  return d}
+async function agir(fn,ok){try{const r=await fn();if(ok)toast(ok);return r}catch(e){toast(e.message,1)}}
+function abrir(id){const d=document.getElementById(id);d.showModal();return d}
+function fechar(el){(el.closest?el.closest('dialog'):document.getElementById(el)).close()}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-fechar]');if(b){e.preventDefault();fechar(b)}});
+function marcarNav(){$$('.rail a').forEach(a=>{if(a.getAttribute('href')===location.pathname)a.classList.add('on')})}
+async function sair(){await agir(()=>api('/api/sair',{method:'POST',body:{}}));location='/login'}
+function copiar(t){if(navigator.clipboard&&window.isSecureContext)return navigator.clipboard.writeText(t).then(()=>toast('Copiado'));const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');toast('Copiado')}catch(e){toast('Copie manualmente',1)}a.remove()}
+marcarNav();
+
+let est={};
+const quando=t=>t?new Date(t*1000).toLocaleString('pt-BR'):'';
+const COR={ok:'--in',info:'--ac',aviso:'--wn'};
+async function status(){
+  try{est=await api('/api/rede/estado');
+    const on=est.rodando&&est.pares_online>0;
+    $('#tst').className='st '+(on?'on':(est.lib_ok?'':'bad'));
+    $('#tst').lastChild.textContent=!est.lib_ok?'Tox indisponível no servidor':!est.rodando?'Iniciando…':est.pares_online?est.pares_online+' aparelho(s) online':est.rede;
+    const g=est.diag||{};
+    $('#dg').innerHTML=g.titulo?`<div class="note" style="border-left-color:var(${COR[g.nivel]||'--ac'})"><b>${esc(g.titulo)}</b><br>${esc(g.texto||'')}${g.comando?`<div class="mono" style="margin-top:6px">${esc(g.comando)}</div><button class="btn sm" style="margin-top:6px" id="bcp">Copiar comando</button>`:''}</div>`:'';
+    const cp=$('#bcp');if(cp)cp.onclick=()=>copiar(g.comando);
+    const ds=(est.dispositivos||[]);
+    $('#dl').innerHTML=ds.length?ds.map(d=>`<div class="dv${d.sair_pendente?' pend':''}"><div><b>${esc(d.nome||'Dispositivo')}</b> <span class="pill ${d.online?'ok':''}">${d.online?'online':'offline'}</span>${d.online&&d.lat_ms!=null?` <span class="lbl">${d.lat_ms} ms</span>`:''}
+      <div class="lbl">${d.ips&&d.ips.length?esc(d.ips.join(', '))+' · ':''}${d.visto?'visto '+quando(d.visto):'ainda não visto'}</div>
+      ${d.sair_pendente?'<div class="lbl wn">Desconexão pendente: será entregue quando o aparelho aparecer na rede.</div>':''}</div>
+      <div class="row">${d.sair_pendente?`<button class="btn sm" data-cc="${esc(d.dev)}">Cancelar desconexão</button>`:`<button class="btn sm" data-dc="${esc(d.dev)}">Desconectar</button>`}${d.online?'':`<button class="btn sm dng" data-es="${esc(d.dev)}">Esquecer</button>`}</div></div>`).join(''):'<div class="empty">Nenhum outro aparelho visto ainda. Entre com o mesmo usuário e senha no app.</div>';
+    const v=est.varredura||{};
+    $('#vr').textContent=v.ativa?`Procurando aparelhos em sub-redes vizinhas… ${v.feito}/${v.total}`:'';
+    $('#inf').textContent=`Este aparelho: ${est.nome} · ${est.pendentes?est.pendentes+' alteração(ões) a enviar':'tudo sincronizado'}${est.ultimo_sync?' · última sincronização '+quando(est.ultimo_sync):''}${est.ultimo_backup?' · último backup '+quando(est.ultimo_backup):' · nenhum backup exportado ainda'}`;
+    $('#seg').innerHTML=`Dados em disco: <b class="${est.cripto_repouso?'in':'wn'}">${est.cripto_repouso?'cifrados (AES-256)':'SEM criptografia (instale sqlcipher3-binary)'}</b><br>Rede entre aparelhos: <b class="in">cifrada ponta a ponta (Tox)</b><br>Identidade da rede (identidade.tox): <b class="in">cifrada em disco</b><br>Acesso web: <b class="${est.tls?'in':'wn'}">${est.tls?'HTTPS':'HTTP sem cifra (use um proxy HTTPS)'}</b>`;
+    if(document.activeElement!==$('#kmanter'))$('#kmanter').checked=!!est.manter_ativa;
+    if(est.bootstrap)$('#meuno').textContent=`Este servidor como nó: porta ${est.bootstrap.porta} · chave ${est.bootstrap.dht}`;
+    const ifs=(est.interfaces||[]).map(i=>`${i.ip} (${i.nome})`).join(', ');
+    $('#ifs').textContent=(ifs?'Redes deste servidor: '+ifs:'Nenhuma interface de rede ativa')+(est.gateway?' · gateway '+est.gateway:'')+(est.escutando_lan?' · escutando a rede local':' · porta 33698 indisponível para escuta');
+  }catch(e){}}
+$('#dl').onclick=async e=>{const b=e.target.closest('button');if(!b)return;
+  const dev=b.dataset.dc||b.dataset.cc||b.dataset.es,d=(est.dispositivos||[]).find(x=>x.dev===dev),nome=d?d.nome:'este aparelho';
+  if(b.dataset.dc){if(!confirm(`Desconectar "${nome}"?\nEle volta à tela de login. Se estiver offline, o comando é entregue quando aparecer na rede.`))return;
+    if(await agir(()=>api('/api/rede/desconectar',{body:{dev}}),'Pedido enviado'))status()}
+  else if(b.dataset.cc){if(await agir(()=>api('/api/rede/cancelar-desconexao',{body:{dev}}),'Desconexão cancelada'))status()}
+  else if(b.dataset.es){if(!confirm(`Remover "${nome}" da lista? Use só para aparelhos que não existem mais.`))return;
+    if(await agir(()=>api('/api/rede/esquecer',{body:{dev}}),'Aparelho removido da lista'))status()}};
+$('#blat').onclick=()=>agir(()=>api('/api/rede/latencia',{body:{}}),'Medindo latência…');
+$('#bvar').onclick=async()=>{const r=await agir(()=>api('/api/rede/varrer',{body:{}}));if(r){toast(r.ok?'Procurando em sub-redes vizinhas…':'Já existe uma busca em andamento');status()}};
+$('#bid').onclick=async()=>{if(confirm('Trocar a identidade deste servidor na rede?\nUse só se o servidor e outro aparelho estiverem com a mesma identidade e não se conectam.')&&await agir(()=>api('/api/rede/identidade',{body:{}}),'Identidade trocada: reconectando…'))status()};
+$('#bsync').onclick=()=>agir(()=>api('/api/rede/sincronizar',{method:'POST',body:{}}),'Sincronizando…');
+$('#bren').onclick=async()=>{const n=prompt('Nome deste aparelho:',est.nome||'');if(n&&n.trim()&&await agir(()=>api('/api/rede/renomear',{body:{nome:n.trim()}}),'Nome alterado'))status()};
+$('#kmanter').onchange=e=>agir(()=>api('/api/rede/manter',{body:{ligado:e.target.checked}}),e.target.checked?'Conta ficará ativa após reiniciar':'Chaves só em memória');
+$('#bbloq').onclick=async()=>{if(confirm('Bloquear? O servidor esquece as chaves e para de sincronizar esta conta até você entrar de novo.')){await agir(()=>api('/api/rede/bloquear',{method:'POST',body:{}}));location='/login'}};
+$('#bno').onclick=()=>agir(()=>api('/api/rede/no',{body:{ip:$('#nip').value.trim(),porta:$('#npt').value.trim(),dht:$('#ndh').value.trim()}}),'Nó adicionado');
+$('#bexp').onclick=async()=>{const f=$('#bf').value;if(f.length<12)return toast('A frase precisa de 12+ caracteres',1);
+  try{const r=await fetch('/api/config/exportar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({frase:f}),credentials:'same-origin'});
+    if(!r.ok){const d=await r.json();throw new Error(d.erro||'Erro')}
+    const b=await r.blob(),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='rrfs-backup.rrfs';a.click();toast('Backup exportado')}catch(e){toast(e.message,1)}};
+$('#bimp').onclick=async()=>{const fl=$('#bfile').files[0];if(!fl||!$('#bf').value)return toast('Escolha o arquivo e digite a frase',1);
+  const fd=new FormData();fd.append('arquivo',fl);fd.append('frase',$('#bf').value);
+  const r=await agir(()=>api('/api/config/importar-backup',{body:fd}));if(r)toast('Backup importado: '+r.registros+' registros')};
+$('#fs').onsubmit=async e=>{e.preventDefault();
+  if(await agir(()=>api('/api/config/senha',{body:{atual:$('#sa').value,nova:$('#sn').value}}),'Senha alterada'))e.target.reset()};
+$('#fi').onsubmit=async e=>{e.preventDefault();
+  if($('#il').checked&&!confirm('Isso apaga as transações, categorias e empréstimos atuais. Continuar?'))return;
+  const fd=new FormData();fd.append('arquivo',$('#ia').files[0]);fd.append('senha',$('#ip').value);fd.append('limpar',$('#il').checked?'1':'0');
+  const b=e.submitter;b.disabled=true;
+  const r=await agir(()=>api('/api/config/importar',{body:fd}));b.disabled=false;
+  if(r){toast('Importado: '+Object.entries(r.contagem).filter(x=>x[1]).map(x=>x[1]+' '+x[0]).join(', '));e.target.reset()}};
+status();
+setInterval(()=>{if(!document.hidden)status()},4000);
+{% endraw %}</script></body></html>

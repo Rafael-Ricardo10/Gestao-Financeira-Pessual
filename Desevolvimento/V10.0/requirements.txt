@@ -1,0 +1,27 @@
+# RRFS Finanças - dependências Python (Python 3.10 ou mais novo)
+# O install.sh / install.bat instalam tudo isto num ambiente próprio (venv).
+
+# Interface e gráficos
+PyQt5
+matplotlib
+numpy
+python-dateutil
+
+# Cotações, extratos e rede
+yfinance
+pdfplumber
+requests
+psutil
+
+# Segurança (OBRIGATÓRIAS: sem elas o app não abre ou grava sem cifra)
+cryptography
+keyring
+sqlcipher3-binary
+
+# Usadas por outros módulos do projeto
+pandas
+werkzeug
+
+# Opcional (OCR de extratos escaneados): pytesseract, pillow
+# Sistema: libtoxcore (o instalador cuida disso: pacote do apt ou compilação própria)
+# Portas: UDP 33700-33799 (Tox) e UDP+TCP 33698 (descoberta/enlace direto)

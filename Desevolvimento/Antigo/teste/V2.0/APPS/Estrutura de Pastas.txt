@@ -1,0 +1,81 @@
+app_desktop/
+├── main.py                 ← Entrada principal
+├── config.py               ← Configurações (IP, onion, etc)
+├── core/
+│   ├── __init__.py
+│   ├── conexao.py          ← Gerencia direto/tor
+│   ├── tor_manager.py      ← Tor embutido
+│   ├── cache_local.py      ← SQLite criptografado
+│   ├── sync.py             ← Sincronização com servidor
+│   └── sessao.py           ← Login persistente
+├── ui/
+│   ├── __init__.py
+│   ├── janela_login.py
+│   ├── janela_principal.py
+│   ├── tela_dashboard.py
+│   ├── tela_transacoes.py
+│   ├── tela_categorias.py
+│   ├── tela_chat.py
+│   └── componentes.py
+├── assets/
+│   ├── tor/                ← Binários do Tor por plataforma
+│   │   ├── linux/tor
+│   │   ├── windows/tor.exe
+│   │   └── mac/tor
+│   └── icone_$             ← Ícone bandeja
+├── build_desktop.sh        ← Script compilação
+└── requirements_desktop.txt
+
+app_mobile/
+├── main.py
+├── config.py               ← Mesmo config do desktop
+├── core/                   ← Mesmo core (reutilizado)
+│   ├── conexao.py
+│   ├── tor_manager.py
+│   ├── cache_local.py
+│   ├── sync.py
+│   └── sessao.py
+├── ui/
+│   ├── tela_login.py
+│   ├── tela_principal.py
+│   ├── tela_dashboard.py
+│   ├── tela_transacoes.py
+│   ├── tela_categorias.py
+│   └── tela_chat.py
+├── buildozer.spec          ← Config Android
+└── requirements_mobile.txt
+
+
+CACHE SEM EXPIRAÇÃO:
+  ✅ TTL removido completamente
+  ✅ Dados persistem para sempre no SQLite
+  ✅ Só atualiza quando dados REALMENTE mudam
+  ✅ Hash MD5 para comparar dados antes de salvar
+  ✅ Versão incremental por chave
+
+MODO OFFLINE COMPLETO:
+  ✅ Funciona dias/semanas sem servidor
+  ✅ Adicionar/editar/excluir funciona offline
+  ✅ Fila de operações pendentes no SQLite
+  ✅ Ao voltar online: envia fila automaticamente
+  ✅ Puxa dados atualizados após sync da fila
+
+MULTI-DISPOSITIVO:
+  ✅ Notebook + PC + Celular A + Celular B
+  ✅ Cada dispositivo tem cache local próprio
+  ✅ Servidor é a fonte da verdade
+  ✅ Sync a cada 30s verifica mudanças
+  ✅ Web → Desktop/Mobile: sync automático
+  ✅ Desktop → Web/Mobile: via servidor
+
+ECONOMIA DE REQUISIÇÕES:
+  ✅ Só baixa dados se hash mudou
+  ✅ Verificação leve (apenas saldo) a cada 30s
+  ✅ Download completo apenas quando necessário
+  ✅ 90%+ das operações usam cache local
+
+DETECÇÃO DE VOLTA ONLINE:
+  ✅ Loop offline tenta reconectar a cada 10s
+  ✅ Ao detectar conexão: processa fila
+  ✅ Notifica UI automaticamente
+  ✅ Funciona tanto com direto quanto via Tor

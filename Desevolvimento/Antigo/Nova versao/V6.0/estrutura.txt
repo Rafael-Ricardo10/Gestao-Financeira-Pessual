@@ -1,0 +1,69 @@
+projeto/
+│
+├── main.py                        # Arquivo principal (execução)
+├── requirements.txt               # Dependências
+├── finance_icon.png               # Ícone da aplicação
+├── login.txt                      # Login salvo (gerado automaticamente)
+│
+├── dados/                         # Bancos de dados dos usuários
+│   └── usuario.db
+│
+├── logs/                          # Logs do sistema
+│
+├── modulos/
+│   ├── __init__.py
+│   ├── database.py                # Banco de dados e migrações
+│   ├── finance_utils.py           # Utilitários financeiros
+│   ├── loans.py                   # Módulo de empréstimos
+│   ├── pdf_parser.py              # Parser de extratos PDF
+│   ├── logs.py                    # Sistema de logs
+│   └── ai/
+│       ├── __init__.py
+│       ├── ai_database.py         # Tabelas da IA
+│       ├── ai_engine.py           # Motor principal IA
+│       ├── trend_analyzer.py      # Análise de tendências
+│       ├── forecaster.py          # Projeções futuras
+│       └── ai_integration.py     # Integração IA com sistema
+│
+└── interface/
+    ├── __init__.py
+    ├── main_window.py             # Janela principal ← ATUALIZADO
+    └── dialogs/
+        ├── __init__.py
+        ├── transaction_dialogs.py
+        ├── category_dialogs.py
+        ├── note_dialogs.py
+        ├── goal_dialogs.py
+        ├── report_dialogs.py      # CalendarDialog permanece aqui
+        ├── loan_dialogs.py
+        ├── trends_dialog.py       # ← NOVO (substituiu o de report)
+        ├── cashflow_dialog.py     # ← NOVO (substituiu o de report)
+        └── ai_panel_dialog.py     # ← NOVO
+
+
+
+OBERSEVAÇÃO FUTURO
+
+A IA é compatível com mobile?
+
+text
+
+✅ SIM! Por estes motivos:
+
+1. numpy        → disponível no Android via Kivy/BeeWare
+2. scikit-learn → leve, sem GPU, funciona em mobile
+3. sqlite3      → nativo no Android
+4. Todos os dados ficam no SQLite local
+5. O módulo AI não depende de internet
+6. Online Learning é leve por design
+
+O que precisará ser atualizado para mobile:
+
+text
+
+✅ main_window.py        → layout mobile (botões grandes, touch)
+✅ dialogs/*.py          → adaptar tamanhos para tela pequena
+⚠️ matplotlib           → substituir por kivy_garden.matplotlib
+                           ou MPAndroidChart (Flutter)
+❌ QSystemTrayIcon      → não existe em mobile, remover
+❌ QFileDialog          → substituir por seletor mobile nativo

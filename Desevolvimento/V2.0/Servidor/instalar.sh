@@ -1,0 +1,852 @@
+#!/usr/bin/env bash
+# =====================================================================
+#  RRFS Gestão Financeira - Instalador do servidor (Debian / Ubuntu / DietPi)
+#
+#  Coloque este arquivo na MESMA pasta que contém:
+#     servidor.py   requirements.txt   templates/   modulos/
+#
+#  Uso:   sudo ./instalar_rrfs.sh              -> menu
+#         sudo ./instalar_rrfs.sh install      -> 1) instalar
+#         sudo ./instalar_rrfs.sh update       -> 2) atualizar
+#         sudo ./instalar_rrfs.sh stop         -> 3) parar o serviço
+#         sudo ./instalar_rrfs.sh start        -> 4) iniciar o serviço
+#         sudo ./instalar_rrfs.sh port 6300    -> 5) alterar a porta do site
+#         sudo ./instalar_rrfs.sh diag         -> 6) diagnóstico
+#         sudo ./instalar_rrfs.sh uninstall    -> 7) desinstalar (mantém só dados/)
+#
+#  O instalador NÃO altera o firewall (ufw/iptables): use o seu gerenciador.
+#
+#  v2: rede descentralizada. O servidor usa HTTPS (certificado próprio) por
+#  padrão e dados cifrados em disco (SQLCipher).
+# =====================================================================
+if [ -z "${BASH_VERSION:-}" ]; then exec bash "$0" "$@"; fi
+set -Eeuo pipefail
+umask 022
+
+# ── configuração (pode ser sobrescrita por variáveis de ambiente) ─────
+APP_DIR="${RRFS_APP_DIR:-/DATA/AppData/RRFS_Gastos_Pessoais}"
+BACKUP_DIR="${RRFS_BACKUP_DIR:-${APP_DIR}_backups}"
+SVC="rrfs-gastos"
+SVC_USER="${RRFS_USER:-rrfs}"
+UNIT_DIR="${RRFS_UNIT_DIR:-/etc/systemd/system}"
+UNIT_FILE="$UNIT_DIR/$SVC.service"
+ENV_FILE="${RRFS_ENV_FILE:-/etc/default/rrfs-gastos}"
+LOG_FILE="${RRFS_LOG_FILE:-/var/log/rrfs-instalador.log}"
+MIN_MB=900                      # espaço livre mínimo (venv com numpy/pandas)
+SRC="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+
+ROLLBACK_ARMED=0
+INICIOU_NOVA=0
+WAS_ACTIVE=0
+BK_DIR=""
+
+# ── mensagens ─────────────────────────────────────────────────────────
+if [[ -t 1 ]]; then
+  C_OK=$'\e[32m'; C_ERR=$'\e[31m'; C_WARN=$'\e[33m'; C_INFO=$'\e[36m'
+  C_B=$'\e[1m'; C_0=$'\e[0m'
+else
+  C_OK=''; C_ERR=''; C_WARN=''; C_INFO=''; C_B=''; C_0=''
+fi
+info()  { echo "${C_INFO}➜${C_0} $*"; }
+ok()    { echo "${C_OK}✔${C_0} $*"; }
+aviso() { echo "${C_WARN}!${C_0} $*" >&2; }
+titulo(){ echo; echo "${C_B}== $* ==${C_0}"; }
+
+die() {
+  trap - ERR
+  echo "${C_ERR}✘ $*${C_0}" >&2
+  if [[ $ROLLBACK_ARMED -eq 1 ]]; then reverter; fi
+  echo "   (detalhes técnicos em $LOG_FILE)" >&2
+  exit 1
+}
+on_err() { die "Erro inesperado na linha $1."; }
+trap 'on_err $LINENO' ERR
+
+# ── utilidades ────────────────────────────────────────────────────────
+log_cmd() {          # executa gravando a saída no log; mostra o fim se falhar
+  local rc=0
+  { echo "--- $(date '+%F %T') \$ $*"; } >>"$LOG_FILE" 2>/dev/null || true
+  "$@" >>"$LOG_FILE" 2>&1 || rc=$?
+  if [[ $rc -ne 0 ]]; then
+    aviso "Comando falhou (código $rc): $*"
+    tail -n 15 "$LOG_FILE" >&2 || true
+  fi
+  return $rc
+}
+
+run_svc() {          # executa como usuário não-root do serviço
+  runuser -u "$SVC_USER" -- env HOME="$APP_DIR/dados" \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 "$@"
+}
+
+perguntar_sn() {     # perguntar_sn "texto" S|N  -> 0 = sim
+  local def="${2:-S}" r
+  if [[ ! -t 0 ]]; then [[ "$def" == "S" ]]; return; fi
+  read -r -p "$1 [$( [[ $def == S ]] && echo 'S/n' || echo 's/N')] " r || r=""
+  r="${r:-$def}"
+  [[ "$r" =~ ^[sSyY]$ ]]
+}
+
+precisa_root() {
+  if [[ $EUID -ne 0 ]]; then
+    if command -v sudo >/dev/null 2>&1; then
+      info "Pedindo permissão de administrador (sudo)..."
+      exec sudo -E bash "$0" "$@"
+    fi
+    echo "Execute como administrador:  sudo $0" >&2
+    exit 1
+  fi
+}
+
+validar_config() {
+  [[ -n "$APP_DIR" && "$APP_DIR" == /* && "$APP_DIR" != "/" ]] \
+    || die "Pasta de instalação inválida: '$APP_DIR'"
+  [[ "$SVC_USER" =~ ^[a-z_][a-z0-9_-]{0,31}$ ]] || die "Usuário inválido: $SVC_USER"
+  mkdir -p "$(dirname "$LOG_FILE")" 2>/dev/null || true
+  touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/tmp/rrfs-instalador.log"
+  chmod 600 "$LOG_FILE" 2>/dev/null || true
+}
+
+checar_sistema() {
+  command -v systemctl >/dev/null 2>&1 || die "systemd não encontrado (systemctl)."
+  [[ -d /run/systemd/system ]] || die "O systemd não está em execução neste sistema."
+  command -v python3 >/dev/null 2>&1 \
+    || die "python3 não encontrado (instale com: apt install python3 python3-venv)."
+  python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 9) else 1)' \
+    || die "É necessário Python 3.9 ou superior (encontrado: $(python3 --version 2>&1))."
+  command -v runuser >/dev/null 2>&1 || die "Comando 'runuser' não encontrado (pacote util-linux)."
+}
+
+validar_origem() {
+  local f faltando=()
+  local obrig=(servidor.py requirements.txt
+    templates/login.html templates/dashboard.html templates/transacoes.html
+    templates/categorias.html templates/emprestimos.html templates/config.html
+    modulos/contas.py modulos/rede.py modulos/sync_core.py
+    modulos/identidade.py modulos/bd_seguro.py modulos/backup.py
+    modulos/tox_financeiro.py modulos/database.py modulos/loans.py
+    modulos/currency_tracker.py modulos/importar_db.py)
+  for f in "${obrig[@]}"; do
+    [[ -f "$SRC/$f" ]] || faltando+=("$f")
+  done
+  if [[ ${#faltando[@]} -gt 0 ]]; then
+    echo "${C_ERR}Arquivos não encontrados ao lado do instalador ($SRC):${C_0}" >&2
+    printf '   - %s\n' "${faltando[@]}" >&2
+    die "Coloque o instalador na pasta do servidor, junto de servidor.py, templates/ e modulos/ (versão 2 da rede)."
+  fi
+  grep -q '_ServidorDuplo' "$SRC/servidor.py" \
+    || die "O servidor.py ao lado do instalador é uma versão ANTIGA (sem HTTP+HTTPS na mesma porta). Substitua pelo servidor.py mais recente e rode de novo."
+  case "$SRC/" in
+    "$APP_DIR"/*) die "O instalador está dentro da pasta de instalação ($APP_DIR). Rode-o a partir da pasta com os arquivos novos." ;;
+  esac
+}
+
+checar_espaco() {
+  local pai livre
+  pai="$(dirname "$APP_DIR")"
+  mkdir -p "$pai" || die "Não foi possível criar $pai (verifique se /DATA está montado)."
+  livre="$(df -Pm "$pai" | awk 'NR==2{print $4}')"
+  [[ "${livre:-0}" -ge "$MIN_MB" ]] \
+    || die "Pouco espaço livre em $pai: ${livre:-0} MB (necessário ao menos $MIN_MB MB)."
+}
+
+# ── estado ────────────────────────────────────────────────────────────
+tem_arquivos()  { [[ -f "$APP_DIR/servidor.py" ]]; }
+tem_servico()   { [[ -f "$UNIT_FILE" ]]; }
+tem_venv()      { [[ -x "$APP_DIR/venv/bin/python" ]]; }
+instalado()     { tem_arquivos && tem_servico && tem_venv; }
+servico_ativo() { systemctl is-active --quiet "$SVC" 2>/dev/null; }
+
+valor_env() {        # valor_env CHAVE padrão
+  local v=""
+  [[ -f "$ENV_FILE" ]] && v="$(grep -E "^$1=" "$ENV_FILE" | tail -n1 | cut -d= -f2- | tr -d '[:space:]')"
+  echo "${v:-$2}"
+}
+porta_servico() { local p; p="$(valor_env RRFS_PORTA 6250 | tr -dc '0-9')"; echo "${p:-6250}"; }
+host_servico()  { valor_env RRFS_HOST 127.0.0.1; }
+tls_ativo()     { [[ "$(valor_env RRFS_TLS 1)" != "0" ]]; }
+esquema()       { if tls_ativo; then echo https; else echo http; fi; }
+
+ips_locais() {
+  local ip
+  for ip in $(hostname -I 2>/dev/null || true); do
+    [[ "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || continue
+    [[ "$ip" == 127.* || "$ip" == 172.17.* ]] && continue
+    echo "$ip"
+  done
+}
+
+porta_ocupada() {
+  if command -v ss >/dev/null 2>&1; then
+    [[ -n "$(ss -ltnH "sport = :$1" 2>/dev/null)" ]]
+  else                       # sem 'ss': tenta abrir a porta com python
+    ! python3 - "$1" <<'PY' 2>/dev/null
+import socket, sys
+s = socket.socket()
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+try:
+    s.bind(("0.0.0.0", int(sys.argv[1])))
+except OSError:
+    sys.exit(1)
+PY
+  fi
+}
+
+# ── pacotes do sistema ────────────────────────────────────────────────
+tox_instalada() {
+  python3 -c 'import ctypes.util,sys; sys.exit(0 if ctypes.util.find_library("toxcore") else 1)' 2>/dev/null
+}
+
+venv_possivel() {
+  local t; t="$(mktemp -d)"
+  if python3 -m venv "$t/v" >/dev/null 2>&1; then rm -rf "$t"; return 0; fi
+  rm -rf "$t"; return 1
+}
+
+instalar_pacotes() {
+  local falta=() apt_ok=0 atualizado=0
+  command -v apt-get >/dev/null 2>&1 && apt_ok=1
+  command -v curl >/dev/null 2>&1 || falta+=(curl)
+  venv_possivel || falta+=(python3-venv)
+
+  apt_instalar() {
+    [[ $apt_ok -eq 1 ]] || return 1
+    if [[ $atualizado -eq 0 ]]; then
+      info "Atualizando lista de pacotes (apt)..."
+      log_cmd apt-get update || aviso "apt-get update falhou; tentando mesmo assim."
+      atualizado=1
+    fi
+    DEBIAN_FRONTEND=noninteractive log_cmd apt-get install -y --no-install-recommends "$@"
+  }
+
+  if [[ ${#falta[@]} -gt 0 ]]; then
+    info "Instalando pacotes necessários: ${falta[*]}"
+    apt_instalar "${falta[@]}" \
+      || die "Não foi possível instalar: ${falta[*]}. Instale manualmente e rode de novo."
+    venv_possivel || die "python3 -m venv continua indisponível. Instale o pacote python3-venv."
+  fi
+
+  if ! tox_instalada; then
+    info "Instalando a biblioteca Tox (rede entre os aparelhos)..."
+    if ! { apt_instalar libtoxcore2 || apt_instalar libtoxcore-dev; } || ! tox_instalada; then
+      aviso "libtoxcore não pôde ser instalada. O site funciona, mas a sincronização"
+      aviso "com os apps ficará indisponível até instalá-la (apt install libtoxcore2)."
+    fi
+  fi
+  ok "Pacotes do sistema verificados."
+}
+
+# ── usuário, pastas, arquivos ─────────────────────────────────────────
+criar_usuario() {
+  if id -u "$SVC_USER" >/dev/null 2>&1; then
+    ok "Usuário '$SVC_USER' já existe."
+    return 0
+  fi
+  local sh=/usr/sbin/nologin
+  [[ -x "$sh" ]] || sh=/bin/false
+  useradd --system --user-group --no-create-home --home-dir "$APP_DIR" \
+          --shell "$sh" "$SVC_USER" || die "Não foi possível criar o usuário '$SVC_USER'."
+  ok "Usuário de serviço '$SVC_USER' criado (sem login, sem privilégios de root)."
+}
+
+preparar_dirs() {
+  mkdir -p "$APP_DIR/templates" "$APP_DIR/modulos" "$APP_DIR/dados" "$APP_DIR/logs" \
+    || die "Não foi possível criar $APP_DIR."
+  mkdir -p "$APP_DIR/dados/.cache"
+}
+
+copiar_sistema() {
+  info "Copiando arquivos do sistema..."
+  local f
+  install -d "$APP_DIR/templates" "$APP_DIR/modulos"
+  install -m 640 "$SRC/servidor.py"       "$APP_DIR/servidor.py"
+  install -m 640 "$SRC/requirements.txt"  "$APP_DIR/requirements.txt"
+  for f in "$SRC"/templates/*.html; do install -m 640 "$f" "$APP_DIR/templates/"; done
+  for f in "$SRC"/modulos/*.py;     do install -m 640 "$f" "$APP_DIR/modulos/"; done
+  [[ -f "$APP_DIR/modulos/__init__.py" ]] || : > "$APP_DIR/modulos/__init__.py"
+  date '+%Y-%m-%d %H:%M:%S' > "$APP_DIR/VERSAO"
+  install -d "$APP_DIR/logs"
+  ok "Arquivos copiados para $APP_DIR."
+}
+
+copiar_dados_origem() {
+  [[ -d "$SRC/dados" ]] || return 0
+  [[ -z "$(ls -A "$APP_DIR/dados" 2>/dev/null | grep -v '^\.cache$' || true)" ]] || return 0
+  local n; n="$(find "$SRC/dados" -maxdepth 1 -name '*.db' | wc -l)"
+  [[ "$n" -gt 0 ]] || return 0
+  echo
+  info "Encontrei dados na pasta de origem ($n banco(s) em $SRC/dados)."
+  aviso "Pare o servidor de teste ANTES de copiar (senão a cópia pode ficar inconsistente)."
+  aviso "Contas do formato antigo são convertidas (e cifradas) no primeiro login de cada uma."
+  if perguntar_sn "Copiar os dados existentes para a instalação?" S; then
+    cp -a "$SRC/dados/." "$APP_DIR/dados/" || die "Falha ao copiar os dados."
+    ok "Dados copiados."
+  else
+    info "Instalação começará sem dados (contas novas)."
+  fi
+}
+
+limpar_codigo() {    # apaga tudo, exceto dados/ e venv/
+  [[ -n "$APP_DIR" && -d "$APP_DIR" ]] || return 1
+  find "$APP_DIR" -mindepth 1 -maxdepth 1 ! -name dados ! -name venv \
+       -exec rm -rf -- {} +
+}
+
+aplicar_permissoes() {
+  info "Aplicando permissões (usuário '$SVC_USER', sem root)..."
+  chown -R "$SVC_USER:$SVC_USER" "$APP_DIR" || die "chown falhou em $APP_DIR."
+  chmod 750 "$APP_DIR"
+  find "$APP_DIR" \( -path "$APP_DIR/venv" -o -path "$APP_DIR/dados" \) -prune -o \
+       -type d -exec chmod 750 {} +
+  find "$APP_DIR" \( -path "$APP_DIR/venv" -o -path "$APP_DIR/dados" \) -prune -o \
+       -type f -exec chmod 640 {} +
+  mkdir -p "$APP_DIR/dados"
+  find "$APP_DIR/dados" -type d -exec chmod 700 {} +
+  find "$APP_DIR/dados" -type f -exec chmod 600 {} +
+  runuser -u "$SVC_USER" -- test -w "$APP_DIR/dados" \
+    || die "O usuário '$SVC_USER' não consegue gravar em $APP_DIR/dados."
+  runuser -u "$SVC_USER" -- test -w "$APP_DIR/logs" \
+    || die "O usuário '$SVC_USER' não consegue gravar em $APP_DIR/logs."
+  ok "Permissões aplicadas."
+}
+
+# ── ambiente virtual e bibliotecas ────────────────────────────────────
+criar_venv() {
+  if tem_venv && run_svc "$APP_DIR/venv/bin/python" -c 'import sys' >/dev/null 2>&1; then
+    ok "Ambiente virtual existente está saudável."
+    return 0
+  fi
+  if [[ -d "$APP_DIR/venv" ]]; then
+    aviso "Ambiente virtual danificado (ex.: Python do sistema foi atualizado). Recriando..."
+    rm -rf "$APP_DIR/venv"
+  fi
+  info "Criando ambiente virtual..."
+  chown "$SVC_USER:$SVC_USER" "$APP_DIR"
+  log_cmd run_svc python3 -m venv "$APP_DIR/venv" \
+    || die "Falha ao criar o ambiente virtual."
+  ok "Ambiente virtual criado."
+}
+
+instalar_libs() {
+  local py="$APP_DIR/venv/bin/python"
+  info "Instalando/atualizando bibliotecas do requirements.txt (pode levar alguns minutos)..."
+  log_cmd run_svc "$py" -m pip install --quiet --upgrade pip wheel \
+    || aviso "Não foi possível atualizar o pip (seguindo com a versão atual)."
+  log_cmd run_svc "$py" -m pip install --upgrade \
+      --progress-bar off -r "$APP_DIR/requirements.txt" \
+    || die "Falha ao instalar as bibliotecas (verifique a conexão com a internet)."
+
+  # novas dependências da v2 (mesmo que o requirements.txt não as liste)
+  info "Instalando criptografia (login, rede e HTTPS)..."
+  log_cmd run_svc "$py" -m pip install --upgrade --progress-bar off cryptography \
+    || die "Falha ao instalar 'cryptography'."
+  if ! log_cmd run_svc "$py" -m pip install --upgrade --progress-bar off sqlcipher3-binary \
+     || ! run_svc "$py" -c 'import sqlcipher3.dbapi2' >>"$LOG_FILE" 2>&1; then
+    aviso "SQLCipher indisponível nesta máquina/arquitetura: os dados ficarão SEM"
+    aviso "criptografia em disco (o site avisa em Configurações). Para tentar depois:"
+    aviso "  $py -m pip install sqlcipher3-binary    (ou: apt install libsqlcipher-dev && pip install sqlcipher3)"
+  else
+    ok "Criptografia de dados em disco (SQLCipher) disponível."
+  fi
+
+  if ! log_cmd run_svc "$py" -m pip check; then
+    aviso "pip check apontou conflitos de versões (veja $LOG_FILE)."
+  fi
+  ok "Bibliotecas instaladas e atualizadas."
+}
+
+testar_import() {    # garante que o servidor carrega antes de ligar o serviço
+  info "Testando se o servidor carrega corretamente..."
+  ( cd "$APP_DIR" && log_cmd run_svc "$APP_DIR/venv/bin/python" -c "import servidor" ) \
+    || die "O servidor não carregou (arquivo ou biblioteca faltando). Veja $LOG_FILE."
+  ok "Servidor carrega sem erros."
+}
+
+# ── configuração e serviço ────────────────────────────────────────────
+criar_env() {
+  if [[ -f "$ENV_FILE" ]]; then
+    # instalações anteriores à v2 não têm RRFS_TLS: o padrão do servidor é HTTPS
+    if ! grep -qE '^RRFS_TLS=' "$ENV_FILE"; then
+      printf 'RRFS_TLS=1\n' >> "$ENV_FILE"
+      info "Adicionado RRFS_TLS=1 (HTTPS) em $ENV_FILE"
+    fi
+    ok "Configuração existente mantida ($ENV_FILE)."
+    return 0
+  fi
+  local modo="2" hosts="" ip nome
+  if [[ -t 0 ]]; then
+    echo
+    echo "Quem poderá acessar o site?"
+    echo "  1) Somente este computador"
+    echo "  2) Outros aparelhos da rede local / VPN (recomendado para a família)"
+    read -r -p "Escolha [2]: " modo || modo=2
+    modo="${modo:-2}"
+  fi
+  mkdir -p "$(dirname "$ENV_FILE")"
+  if [[ "$modo" == "1" ]]; then
+    printf 'RRFS_HOST=127.0.0.1\nRRFS_PORTA=6250\nRRFS_HOSTS=\nRRFS_TLS=1\n' > "$ENV_FILE"
+  else
+    nome="$(hostname 2>/dev/null || echo servidor)"
+    hosts="$nome,$nome.local"
+    for ip in $(ips_locais); do hosts="$hosts,$ip"; done
+    printf 'RRFS_HOST=0.0.0.0\nRRFS_PORTA=6250\nRRFS_HOSTS=%s\nRRFS_TLS=1\n' "$hosts" > "$ENV_FILE"
+  fi
+  chmod 644 "$ENV_FILE"
+  ok "Configuração criada em $ENV_FILE"
+  info "Para liberar outro endereço/nome, edite RRFS_HOSTS nesse arquivo e reinicie (opção 3 e 4)."
+  info "Atrás de um proxy HTTPS (Caddy/nginx), coloque RRFS_TLS=0 nesse arquivo."
+}
+
+criar_servico() {
+  info "Criando o serviço systemd ($SVC)..."
+  mkdir -p "$UNIT_DIR"
+  cat > "$UNIT_FILE" <<EOF
+[Unit]
+Description=RRFS Gestão Financeira (servidor web + rede de aparelhos)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=$SVC_USER
+Group=$SVC_USER
+WorkingDirectory=$APP_DIR
+EnvironmentFile=-$ENV_FILE
+Environment=HOME=$APP_DIR/dados
+Environment=XDG_CACHE_HOME=$APP_DIR/dados/.cache
+Environment=PYTHONUNBUFFERED=1
+ExecStart=$APP_DIR/venv/bin/python servidor.py
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target
+EOF
+  chmod 644 "$UNIT_FILE"
+  systemctl daemon-reload || die "systemctl daemon-reload falhou."
+  systemctl enable "$SVC" >>"$LOG_FILE" 2>&1 || die "Não foi possível ativar o serviço no boot."
+  ok "Serviço criado e ativado para iniciar com o sistema."
+}
+
+sonda_site() {       # responde 0 se o site atende (aceita HTTPS ou HTTP)
+  local porta="$1" e
+  for e in "$(esquema)" https http; do
+    if curl -fsS -k -o /dev/null --max-time 3 "$e://127.0.0.1:${porta}/login" 2>/dev/null; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+esperar_servidor() {
+  local porta i; porta="$(porta_servico)"
+  for i in $(seq 1 45); do
+    servico_ativo || return 1
+    sonda_site "$porta" && return 0
+    sleep 1
+  done
+  return 1
+}
+
+mostrar_log_servico() {
+  local out=""
+  echo "---- últimas linhas do serviço ----" >&2
+  if command -v journalctl >/dev/null 2>&1; then
+    out="$(journalctl -u "$SVC" -n 25 --no-pager 2>/dev/null || true)"
+  fi
+  if [[ -z "${out//[[:space:]]/}" || "$out" == *"No entries"* || "$out" == *"-- No"* ]]; then
+    out="$(tail -n 25 "$APP_DIR/logs/servidor.log" 2>/dev/null || true)"
+  fi
+  if [[ -z "${out//[[:space:]]/}" ]]; then
+    # sem journal (ex.: DietPi): roda o servidor 10 s em primeiro plano
+    # para mostrar o erro real
+    out="$( { set -a; [[ -f "$ENV_FILE" ]] && . "$ENV_FILE"; set +a
+              cd "$APP_DIR" && timeout 10 runuser -u "$SVC_USER" -- env \
+                HOME="$APP_DIR/dados" PYTHONUNBUFFERED=1 \
+                RRFS_HOST="${RRFS_HOST:-127.0.0.1}" RRFS_PORTA="${RRFS_PORTA:-6250}" \
+                RRFS_TLS="${RRFS_TLS:-1}" \
+                "$APP_DIR/venv/bin/python" servidor.py; } 2>&1 | tail -n 25 || true)"
+  fi
+  echo "$out" >&2
+  echo "-----------------------------------" >&2
+}
+
+iniciar_servico() {
+  local porta; porta="$(porta_servico)"
+  if ! servico_ativo && porta_ocupada "$porta"; then
+    die "A porta $porta já está em uso por outro programa (talvez o servidor de teste). Feche-o e tente de novo."
+  fi
+  INICIOU_NOVA=1
+  systemctl restart "$SVC" || { mostrar_log_servico; die "Não foi possível iniciar o serviço."; }
+  info "Aguardando o servidor responder ($(esquema))..."
+  if esperar_servidor; then
+    ok "Servidor no ar."
+  else
+    mostrar_log_servico
+    die "O serviço iniciou mas o site não respondeu na porta $porta."
+  fi
+  verificar_http_puro "$porta"
+}
+
+verificar_http_puro() {   # ferramentas/atalhos usam http://: não pode haver "reset"
+  local porta="$1" cod
+  tls_ativo || return 0
+  cod="$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "http://127.0.0.1:${porta}/login" 2>/dev/null || true)"
+  if [[ "$cod" =~ ^[23] ]]; then
+    ok "HTTP em 127.0.0.1 responde ($cod); de outros aparelhos é redirecionado para HTTPS."
+  else
+    aviso "http://127.0.0.1:$porta não respondeu (código '${cod:-nenhum}')."
+    aviso "O processo em execução parece ser uma versão antiga do servidor. Confira:"
+    aviso "  grep -c _ServidorDuplo $APP_DIR/servidor.py   (deve mostrar 1 ou mais)"
+    aviso "  systemctl restart $SVC   e veja a linha 'HTTP é redirecionado para HTTPS' no log."
+  fi
+}
+
+mostrar_acesso() {
+  local porta host ip e; porta="$(porta_servico)"; host="$(host_servico)"; e="$(esquema)"
+  titulo "Pronto"
+  echo "  Acesse:  ${C_B}$e://127.0.0.1:$porta${C_0}   (neste computador)"
+  if [[ "$host" != "127.0.0.1" ]]; then
+    for ip in $(ips_locais); do echo "           ${C_B}$e://$ip:$porta${C_0}   (rede local / VPN)"; done
+  fi
+  if [[ "$e" == "https" ]]; then
+    echo
+    info "O navegador avisará que o certificado não é confiável (é um certificado próprio,"
+    info "gerado neste servidor): clique em 'Avançado' > 'Continuar'. O tráfego fica cifrado."
+  fi
+  echo
+  echo "  Login:           o MESMO usuário e senha dos apps (Primeiro acesso: junta o servidor à sua rede)"
+  echo "  Ver logs:        journalctl -u $SVC -f   (ou $APP_DIR/logs)"
+  echo "  Configuração:    $ENV_FILE"
+  echo "  Dados/contas:    $APP_DIR/dados"
+  info "Firewall: este instalador não altera regras (use o seu gerenciador de firewall)."
+  info "Portas usadas: $porta/tcp (site) e 33700-33799/udp (rede Tox entre aparelhos)."
+}
+
+# ── backup / rollback (atualização) ───────────────────────────────────
+fazer_backup() {
+  BK_DIR="$BACKUP_DIR/$(date +%Y%m%d_%H%M%S)"
+  mkdir -p "$BK_DIR" || die "Não foi possível criar a pasta de backup $BK_DIR."
+  chmod 700 "$BACKUP_DIR" "$BK_DIR"
+  info "Criando backup em $BK_DIR ..."
+  tar -czf "$BK_DIR/codigo.tar.gz" -C "$APP_DIR" \
+      --exclude=./dados --exclude=./venv --exclude=./logs . \
+    || die "Falha ao criar o backup do código."
+  tar -czf "$BK_DIR/dados.tar.gz" -C "$APP_DIR" dados \
+    || die "Falha ao criar o backup dos dados."
+  ok "Backup criado."
+}
+
+limpar_backups_antigos() {
+  [[ -d "$BACKUP_DIR" ]] || return 0
+  local d
+  while IFS= read -r d; do rm -rf -- "$d"; done < <(
+    find "$BACKUP_DIR" -mindepth 1 -maxdepth 1 -type d | sort -r | tail -n +6)
+}
+
+reverter() {
+  ROLLBACK_ARMED=0
+  set +e
+  trap - ERR
+  aviso "Algo deu errado: restaurando a versão anterior..."
+  systemctl stop "$SVC" >/dev/null 2>&1
+  if [[ -n "$BK_DIR" && -f "$BK_DIR/codigo.tar.gz" ]]; then
+    limpar_codigo
+    tar -xzf "$BK_DIR/codigo.tar.gz" -C "$APP_DIR"
+    if [[ $INICIOU_NOVA -eq 1 && -f "$BK_DIR/dados.tar.gz" ]]; then
+      rm -rf "$APP_DIR/dados"
+      tar -xzf "$BK_DIR/dados.tar.gz" -C "$APP_DIR"
+    fi
+    aplicar_permissoes >/dev/null 2>&1
+    systemctl daemon-reload
+    if [[ $WAS_ACTIVE -eq 1 ]]; then
+      systemctl start "$SVC"
+      if esperar_servidor; then
+        ok "Versão anterior restaurada e em execução."
+      else
+        aviso "Versão anterior restaurada, mas o serviço não respondeu. Veja: journalctl -u $SVC -n 50"
+      fi
+    else
+      ok "Versão anterior restaurada (serviço permanece parado, como estava)."
+    fi
+    info "Backup mantido em: $BK_DIR"
+  else
+    aviso "Backup não disponível para restaurar."
+  fi
+}
+
+# ── ações do menu ─────────────────────────────────────────────────────
+acao_instalar() {
+  titulo "1) Instalar"
+  if instalado; then
+    aviso "O sistema já está instalado em $APP_DIR."
+    info "Para colocar uma nova versão use a opção 2 (Atualizar)."
+    return 0
+  fi
+  if tem_arquivos || tem_servico || tem_venv; then
+    info "Instalação incompleta encontrada: será concluída (dados preservados)."
+  fi
+  validar_origem
+  checar_sistema
+  checar_espaco
+  instalar_pacotes
+  criar_usuario
+  preparar_dirs
+  copiar_sistema
+  copiar_dados_origem
+  chown -R "$SVC_USER:$SVC_USER" "$APP_DIR"
+  criar_venv
+  instalar_libs
+  testar_import
+  criar_env
+  criar_servico
+  aplicar_permissoes
+  iniciar_servico
+  mostrar_acesso
+  ok "Instalação concluída."
+}
+
+acao_atualizar() {
+  titulo "2) Atualizar"
+  if ! instalado; then
+    aviso "O sistema não está instalado (ou está incompleto). Use a opção 1 (Instalar)."
+    return 0
+  fi
+  validar_origem
+  checar_sistema
+  checar_espaco
+  id -u "$SVC_USER" >/dev/null 2>&1 || die "Usuário '$SVC_USER' não existe. Use a opção 1 para reparar."
+
+  if servico_ativo; then WAS_ACTIVE=1; fi
+  info "Parando o serviço antes de atualizar..."
+  systemctl stop "$SVC" || die "Não foi possível parar o serviço."
+
+  fazer_backup
+  ROLLBACK_ARMED=1
+
+  info "Removendo a versão antiga (mantendo dados e ambiente virtual)..."
+  limpar_codigo || die "Falha ao remover arquivos antigos."
+  preparar_dirs
+  copiar_sistema
+  chown -R "$SVC_USER:$SVC_USER" "$APP_DIR"
+  criar_venv
+  instalar_libs
+  testar_import
+  criar_env
+  criar_servico
+  aplicar_permissoes
+  iniciar_servico
+
+  ROLLBACK_ARMED=0
+  limpar_backups_antigos
+  mostrar_acesso
+  ok "Atualização concluída. Backup desta atualização: $BK_DIR"
+}
+
+acao_parar() {
+  titulo "3) Parar serviço"
+  if ! tem_servico; then aviso "Serviço não instalado. Use a opção 1."; return 0; fi
+  if ! servico_ativo; then ok "O serviço já está parado."; return 0; fi
+  systemctl stop "$SVC" || die "Não foi possível parar o serviço."
+  servico_ativo && die "O serviço continua ativo."
+  ok "Serviço parado. (Ele volta a iniciar no próximo boot; para isso não acontecer: systemctl disable $SVC)"
+}
+
+acao_iniciar() {
+  titulo "4) Iniciar serviço"
+  if ! instalado; then aviso "O sistema não está instalado. Use a opção 1."; return 0; fi
+  checar_sistema
+  iniciar_servico
+  mostrar_acesso
+}
+
+acao_desinstalar() {
+  titulo "7) Desinstalar"
+  local n; n="$(awk -F/ '{print NF-1}' <<<"$APP_DIR")"
+  [[ "$n" -ge 2 ]] || die "Pasta de instalação suspeita ('$APP_DIR'): recusando apagar."
+  if ! tem_arquivos && ! tem_servico && ! tem_venv && [[ ! -f "$ENV_FILE" && ! -d "$APP_DIR/templates" ]]; then
+    aviso "Nada instalado para remover em $APP_DIR."
+    return 0
+  fi
+  echo "Será ${C_ERR}APAGADO${C_0}:"
+  echo "   - serviço systemd ($UNIT_FILE) e início automático"
+  echo "   - código, templates, módulos, logs e ambiente virtual em $APP_DIR"
+  echo "   - configuração $ENV_FILE (porta, hosts, HTTPS)"
+  echo "Será ${C_OK}MANTIDO${C_0}:"
+  echo "   - ${C_B}$APP_DIR/dados${C_0}  (contas, bancos cifrados, identidade Tox, certificado)"
+  echo "   - usuário do sistema '$SVC_USER' (dono dos dados)"
+  echo "   - backups em $BACKUP_DIR (a menos que você escolha apagar abaixo)"
+  echo
+  aviso "As chaves das contas derivam da senha: os dados mantidos só abrem com o login certo."
+  local conf="${RRFS_CONFIRMA:-}"
+  if [[ -z "$conf" ]]; then
+    [[ -t 0 ]] || die "Sem terminal: para confirmar defina RRFS_CONFIRMA=DESINSTALAR."
+    read -r -p "Digite DESINSTALAR para confirmar: " conf || conf=""
+  fi
+  [[ "$conf" == "DESINSTALAR" ]] || { info "Cancelado. Nada foi alterado."; return 0; }
+
+  info "Parando e removendo o serviço..."
+  systemctl stop "$SVC" >>"$LOG_FILE" 2>&1 || true
+  systemctl disable "$SVC" >>"$LOG_FILE" 2>&1 || true
+  rm -f -- "$UNIT_FILE"
+  systemctl daemon-reload >>"$LOG_FILE" 2>&1 || true
+  systemctl reset-failed "$SVC" >>"$LOG_FILE" 2>&1 || true
+  pkill -f "$APP_DIR/venv/bin/python" >/dev/null 2>&1 || true
+
+  info "Removendo código e ambiente virtual (mantendo dados/)..."
+  mkdir -p "$APP_DIR/dados"
+  limpar_codigo || die "Falha ao remover os arquivos."
+  rm -rf -- "$APP_DIR/venv"
+  rm -f -- "$ENV_FILE"
+
+  if [[ -d "$BACKUP_DIR" ]] && perguntar_sn "Apagar também os backups de atualização em $BACKUP_DIR?" N; then
+    rm -rf -- "$BACKUP_DIR"
+    ok "Backups apagados."
+  fi
+  chown -R "$SVC_USER:$SVC_USER" "$APP_DIR/dados" 2>/dev/null || true
+  ok "Desinstalado. Seus dados continuam em $APP_DIR/dados"
+  info "Para voltar: coloque os arquivos do servidor ao lado do instalador e use a opção 1 (os dados serão reaproveitados)."
+}
+
+acao_porta() {
+  titulo "5) Alterar a porta do site"
+  if ! instalado; then aviso "O sistema não está instalado. Use a opção 1."; return 0; fi
+  checar_sistema
+  local atual nova="${1:-}"; atual="$(porta_servico)"
+  if [[ -z "$nova" ]]; then
+    [[ -t 0 ]] || die "Informe a porta:  sudo $0 port 6300"
+    read -r -p "Porta atual: $atual. Nova porta (1024-65535): " nova || nova=""
+  fi
+  [[ "$nova" =~ ^[0-9]+$ && "$nova" -ge 1024 && "$nova" -le 65535 ]] \
+    || die "Porta inválida: '$nova' (use um número entre 1024 e 65535)."
+  if [[ "$nova" == "$atual" ]]; then ok "O serviço já usa a porta $atual."; return 0; fi
+  if porta_ocupada "$nova"; then
+    aviso "Quem está usando a porta $nova:"
+    ss -ltnpH "sport = :$nova" 2>/dev/null >&2 || true
+    die "A porta $nova já está ocupada por outro programa."
+  fi
+  mkdir -p "$(dirname "$ENV_FILE")"; touch "$ENV_FILE"
+  if grep -qE '^RRFS_PORTA=' "$ENV_FILE"; then
+    sed -i -E "s/^RRFS_PORTA=.*/RRFS_PORTA=$nova/" "$ENV_FILE"
+  else
+    printf 'RRFS_PORTA=%s\n' "$nova" >> "$ENV_FILE"
+  fi
+  ok "Porta alterada de $atual para $nova em $ENV_FILE"
+  iniciar_servico
+  if porta_ocupada "$atual"; then
+    aviso "A porta antiga ($atual) AINDA está em uso por outro processo (não é este serviço):"
+    ss -ltnpH "sport = :$atual" 2>/dev/null >&2 || true
+    aviso "Se for um servidor antigo/de teste, encerre-o (veja a opção 6 - Diagnóstico)."
+  fi
+  mostrar_acesso
+}
+
+acao_diagnostico() {
+  titulo "6) Diagnóstico"
+  local porta ip e; porta="$(porta_servico)"
+  echo "${C_B}Configuração${C_0} ($ENV_FILE):"
+  if [[ -f "$ENV_FILE" ]]; then sed 's/^/   /' "$ENV_FILE"; else echo "   (arquivo não existe)"; fi
+  echo
+  echo "${C_B}Serviço${C_0}: $(systemctl is-active "$SVC" 2>/dev/null || true)"
+  systemctl show "$SVC" -p MainPID -p ExecStart -p EnvironmentFiles 2>/dev/null | sed 's/^/   /' || true
+  echo
+  echo "${C_B}Quem escuta nas portas${C_0} $porta, 6250 e 6300:"
+  if command -v ss >/dev/null 2>&1; then
+    ss -ltnpH 2>/dev/null | grep -E ":($porta|6250|6300)\s" | sed 's/^/   /' || echo "   (ninguém)"
+  fi
+  echo
+  echo "${C_B}Processos servidor.py em execução${C_0} (mais de um = conflito):"
+  pgrep -af 'servidor\.py' | sed 's/^/   /' || echo "   (nenhum)"
+  echo
+  echo "${C_B}Respostas do site${C_0} (porta $porta):"
+  for ip in 127.0.0.1 $(ips_locais); do
+    for e in http https; do
+      printf '   %s://%s:%s -> ' "$e" "$ip" "$porta"
+      curl -sk -o /dev/null -w '%{http_code}' --max-time 4 "$e://$ip:$porta/login" 2>/dev/null || printf 'sem resposta'
+      echo
+    done
+  done
+  echo
+  info "Interpretação: 200/302/308 = respondendo. 000/'sem resposta' = nada atende nessa porta/protocolo."
+  info "Se a porta antiga ainda aparece com outro processo, encerre-o (kill PID) e use a opção 5 de novo."
+  info "Ferramentas externas (firewall, atalhos) guardam a porta antiga: atualize-as para $porta."
+}
+
+# ── menu ──────────────────────────────────────────────────────────────
+status_linha() {
+  local i s v=""
+  if instalado; then i="${C_OK}instalado${C_0}"; else i="${C_WARN}não instalado${C_0}"; fi
+  if tem_servico; then
+    if servico_ativo; then s="${C_OK}rodando${C_0}"; else s="${C_WARN}parado${C_0}"; fi
+  else s="—"; fi
+  [[ -f "$APP_DIR/VERSAO" ]] && v="  |  versão de $(cat "$APP_DIR/VERSAO")"
+  echo "  Estado: $i  |  Serviço: $s  |  Porta: $(porta_servico)$v"
+  echo "  Pasta:  $APP_DIR"
+}
+
+executar() {         # roda a ação isolada: um erro não derruba o menu
+  local rc=0
+  trap - ERR         # 'die' já explicou o erro; evita a mensagem duplicada
+  set +e
+  ( set -e; trap 'on_err $LINENO' ERR; "$@" )
+  rc=$?
+  set -e
+  trap 'on_err $LINENO' ERR
+  [[ $rc -eq 0 ]] || aviso "A operação terminou com erro (veja a mensagem acima)."
+  return 0
+}
+
+menu() {
+  local op
+  while true; do
+    echo
+    echo "${C_B}=========== RRFS Gestão Financeira - Servidor ===========${C_0}"
+    status_linha
+    echo
+    echo "  1) Instalar"
+    echo "  2) Atualizar (nova versão)"
+    echo "  3) Parar serviço"
+    echo "  4) Iniciar serviço"
+    echo "  5) Alterar a porta do site"
+    echo "  6) Diagnóstico (porta, processos, respostas)"
+    echo "  7) Desinstalar (mantém só a pasta dados)"
+    echo "  0) Sair"
+    echo
+    read -r -p "Escolha uma opção: " op || exit 0
+    case "$op" in
+      1) executar acao_instalar ;;
+      2) executar acao_atualizar ;;
+      3) executar acao_parar ;;
+      4) executar acao_iniciar ;;
+      5) executar acao_porta ;;
+      6) executar acao_diagnostico ;;
+      7) executar acao_desinstalar ;;
+      0|q|Q|sair) exit 0 ;;
+      *) aviso "Opção inválida." ;;
+    esac
+  done
+}
+
+# ── principal ─────────────────────────────────────────────────────────
+precisa_root "$@"
+validar_config
+case "${1:-}" in
+  "")                 menu ;;
+  1|install|instalar) acao_instalar ;;
+  2|update|atualizar) acao_atualizar ;;
+  3|stop|parar)       acao_parar ;;
+  4|start|iniciar)    acao_iniciar ;;
+  5|port|porta)       acao_porta "${2:-}" ;;
+  6|diag|diagnostico) acao_diagnostico ;;
+  7|uninstall|desinstalar) acao_desinstalar ;;
+  *) echo "Uso: sudo $0 [install|update|stop|start|port N|diag|uninstall]" >&2; exit 2 ;;
+esac

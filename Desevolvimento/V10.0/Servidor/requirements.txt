@@ -1,0 +1,15 @@
+Flask>=3.0
+yfinance
+numpy
+pdfplumber
+requests
+python-dateutil
+bcrypt
+cryptography
+sqlcipher3-binary
+keyring
+# Opcional (OCR de extratos escaneados; exige o programa "tesseract-ocr" no sistema):
+# pytesseract
+# pillow
+
+# Porta Tox 33700-33799

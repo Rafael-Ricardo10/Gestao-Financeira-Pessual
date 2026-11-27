@@ -1,0 +1,17 @@
+[Desktop Entry]
+Comment[pt_BR]=Gastos Pessoais
+Comment=Gastos Pessoais
+Exec=/home/rafael/.local/share/Gastos_Pessoais/RRFS-Financas-linux-x86_64
+GenericName[pt_BR]=Gastos Pessoais
+GenericName=Gastos Pessoais
+Icon=/home/rafael/.local/share/Gastos_Pessoais/finance_icon.png
+MimeType=
+Name[pt_BR]=Gastos Pessoais
+Name=Gastos Pessoais
+Path=/home/rafael/.local/share/Gastos_Pessoais/
+StartupNotify=true
+Terminal=false
+TerminalOptions=
+Type=Application
+X-KDE-SubstituteUID=false
+X-KDE-Username=

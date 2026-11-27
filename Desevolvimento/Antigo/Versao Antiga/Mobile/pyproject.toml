@@ -1,0 +1,29 @@
+[tool.briefcase]
+project_name = "Gestão Financeira"
+bundle = "com.financaspessoais"
+version = "1.0"
+url = "http://rafaelricardorrfs.com/"
+license = "MIT license"
+author = "Rafael Ricardo"
+author_email = "rafaelricardoprogramador@proton.me"
+
+[tool.briefcase.app.financeapp]
+formal_name = "Gestão Financeira"
+description = "Aplicativo de gestão financeira pessoal"
+icon = "src/financeapp/resources/finance_icon-128.png"
+sources = ['src/financeapp']
+
+requires = [
+    "toga~=0.3.0",
+]
+
+[tool.briefcase.app.financeapp.android]
+requires = [
+    "toga-android~=0.3.0",
+]
+
+android_permissions = [
+    "android.permission.READ_EXTERNAL_STORAGE",
+    "android.permission.WRITE_EXTERNAL_STORAGE",
+    "android.permission.USE_BIOMETRIC"
+]

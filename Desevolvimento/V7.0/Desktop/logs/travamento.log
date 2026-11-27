@@ -1,0 +1,68 @@
+
+===== 2026-11-19 19:42:30 interface parada ha 1.0s =====
+--- Vigia
+  File "/usr/lib/python3.13/threading.py", line 1014, in _bootstrap
+    self._bootstrap_inner()
+  File "/usr/lib/python3.13/threading.py", line 1043, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.13/threading.py", line 994, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/rafael/Programação/RRFS_Gastos_Pessoais/Desktop/app.py", line 181, in vigiar
+    f.write(''.join(traceback.format_stack(quadro)[-8:]))
+--- THREAD PRINCIPAL (interface)
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/home/rafael/Programação/RRFS_Gastos_Pessoais/Desktop/env/lib/python3.13/site-packages/keyring/backends/macOS/api.py", line 26, in <module>
+    _core = ctypes.CDLL(find_library('CoreServices'))
+  File "/usr/lib/python3.13/ctypes/util.py", line 342, in find_library
+    _get_soname(_findLib_gcc(name)) or _get_soname(_findLib_ld(name))
+  File "/usr/lib/python3.13/ctypes/util.py", line 143, in _findLib_gcc
+    trace = proc.stdout.read()
+  File "/usr/lib/python3.13/shutil.py", line 1582, in which
+    return name
+  File "/usr/lib/python3.13/shutil.py", line 1489, in _access_check
+    return (os.path.exists(fn) and os.access(fn, mode)
+  File "<frozen genericpath>", line 22, in exists
+
+===== 2026-11-19 19:55:45 interface parada ha 1.0s =====
+--- Vigia
+  File "/usr/lib/python3.13/threading.py", line 1014, in _bootstrap
+    self._bootstrap_inner()
+  File "/usr/lib/python3.13/threading.py", line 1043, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.13/threading.py", line 994, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/rafael/Programação/RRFS_Gastos_Pessoais/Desktop/app.py", line 181, in vigiar
+    f.write(''.join(traceback.format_stack(quadro)[-8:]))
+--- THREAD PRINCIPAL (interface)
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/home/rafael/Programação/RRFS_Gastos_Pessoais/Desktop/env/lib/python3.13/site-packages/keyring/backends/macOS/api.py", line 26, in <module>
+    _core = ctypes.CDLL(find_library('CoreServices'))
+  File "/usr/lib/python3.13/ctypes/util.py", line 342, in find_library
+    _get_soname(_findLib_gcc(name)) or _get_soname(_findLib_ld(name))
+  File "/usr/lib/python3.13/ctypes/util.py", line 143, in _findLib_gcc
+    trace = proc.stdout.read()
+
+===== 2026-11-19 20:07:03 interface parada ha 1.0s =====
+--- Vigia
+  File "/usr/lib/python3.13/threading.py", line 1014, in _bootstrap
+    self._bootstrap_inner()
+  File "/usr/lib/python3.13/threading.py", line 1043, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.13/threading.py", line 994, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/rafael/Programação/RRFS_Gastos_Pessoais/Desktop/app.py", line 181, in vigiar
+    f.write(''.join(traceback.format_stack(quadro)[-8:]))
+--- THREAD PRINCIPAL (interface)
+  File "/home/rafael/Programação/RRFS_Gastos_Pessoais/Desktop/app.py", line 235, in <module>
+    main()
+  File "/home/rafael/Programação/RRFS_Gastos_Pessoais/Desktop/app.py", line 222, in main
+    janela = MainWindow()
+  File "/home/rafael/Programação/RRFS_Gastos_Pessoais/Desktop/interface/main_window.py", line 640, in __init__
+    self._setup_widgets()
+  File "/home/rafael/Programação/RRFS_Gastos_Pessoais/Desktop/interface/main_window.py", line 793, in _setup_widgets
+    self.cashflow_button.clicked.connect(

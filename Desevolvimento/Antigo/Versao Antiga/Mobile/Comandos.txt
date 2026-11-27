@@ -1,0 +1,20 @@
+1. instala bibioteca
+
+pip install briefcase
+
+2. Crie o projeto para Android:
+
+briefcase create android
+
+3. Atualize as dependências:
+
+briefcase update android
+
+4. Compile o aplicativo:
+
+briefcase build android
+
+5. Empacote o APK:
+
+briefcase package android
+

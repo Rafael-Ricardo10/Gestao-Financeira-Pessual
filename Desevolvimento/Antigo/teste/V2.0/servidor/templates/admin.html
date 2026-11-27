@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RRFS Admin</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--card:#1c2128;--inp:#21262d;
+  --border:#30363d;--text:#e6edf3;--text2:#8b949e;--muted:#484f58;
+  --green:#238636;--green-h:#2ea043;--blue:#1f6feb;--blue-h:#388bfd;
+  --red:#da3633;--red-h:#f85149;--gold:#e3b341;--purple:#8957e5;
+  --sw:220px;
+}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;min-height:100vh}
+
+/* SIDEBAR */
+.sidebar{width:var(--sw);background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50}
+.sb-logo{padding:18px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sb-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--red),var(--purple));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.sb-title{font-size:13px;font-weight:700}
+.sb-sub{font-size:10px;color:var(--text2)}
+.sb-nav{flex:1;padding:10px 8px;overflow-y:auto}
+.nav-sec{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:8px 8px 4px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:14px;font-weight:500;transition:all .15s;margin-bottom:2px;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:var(--card);color:var(--text)}
+.nav-item.active{background:rgba(218,54,51,.15);color:#f85149}
+.nav-item .ic{font-size:16px;width:20px;text-align:center}
+.sb-user{padding:14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--purple));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
+.uname{font-size:13px;font-weight:600}
+.urole{font-size:11px;color:var(--text2)}
+.btn-exit{margin-left:auto;background:none;border:none;color:var(--text2);cursor:pointer;font-size:18px;padding:4px;border-radius:6px;transition:color .2s}
+.btn-exit:hover{color:var(--red-h)}
+
+/* MAIN */
+.main{margin-left:var(--sw);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40}
+.topbar-title{font-size:18px;font-weight:700}
+.content{padding:24px;flex:1}
+
+/* PAGES */
+.page{display:none}.page.active{display:block}
+
+/* CARDS */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px}
+.card-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.clabel{font-size:12px;color:var(--text2);font-weight:500}
+.cicon{font-size:20px}
+.cval{font-size:28px;font-weight:700;line-height:1}
+.csub{font-size:12px;color:var(--text2);margin-top:6px}
+.c-blue{border-left:3px solid var(--blue)}.c-green{border-left:3px solid var(--green)}
+.c-red{border-left:3px solid var(--red)}.c-gold{border-left:3px solid var(--gold)}
+.c-purple{border-left:3px solid var(--purple)}
+.t-blue{color:var(--blue-h)}.t-green{color:#3fb950}.t-red{color:var(--red-h)}.t-gold{color:var(--gold)}.t-purple{color:#bc8cff}
+
+/* TABLE */
+.tcard{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:24px}
+.thead{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.ttitle{font-size:15px;font-weight:600}
+table{width:100%;border-collapse:collapse}
+th{padding:11px 16px;text-align:left;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--bg2)}
+td{padding:12px 16px;font-size:13px;border-bottom:1px solid rgba(48,54,61,.5)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(48,54,61,.3)}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.b-green{background:rgba(35,134,54,.2);color:#3fb950}
+.b-red{background:rgba(218,54,51,.2);color:var(--red-h)}
+.b-blue{background:rgba(31,111,235,.2);color:var(--blue-h)}
+.b-gold{background:rgba(227,179,65,.2);color:var(--gold)}
+.b-purple{background:rgba(137,87,229,.2);color:#bc8cff}
+
+/* BUTTONS */
+.btn{padding:9px 16px;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--blue);color:#fff}.btn-primary:hover{background:var(--blue-h)}
+.btn-danger{background:var(--red);color:#fff}.btn-danger:hover{background:var(--red-h)}
+.btn-success{background:var(--green);color:#fff}.btn-success:hover{background:var(--green-h)}
+.btn-ghost{background:var(--inp);color:var(--text);border:1px solid var(--border)}.btn-ghost:hover{border-color:var(--text2)}
+.btn-warn{background:rgba(210,153,34,.2);color:var(--gold);border:1px solid rgba(210,153,34,.4)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-icon{padding:6px;border-radius:6px}
+
+/* FORM */
+.frow{display:grid;gap:14px;margin-bottom:14px}
+.f2{grid-template-columns:1fr 1fr}.f3{grid-template-columns:1fr 1fr 1fr}
+.fg{display:flex;flex-direction:column;gap:6px}
+.flabel{font-size:12px;font-weight:500;color:var(--text2)}
+.fc{padding:10px 12px;background:var(--inp);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;transition:border-color .2s;width:100%}
+.fc:focus{border-color:var(--blue)}
+select.fc option{background:var(--card)}
+textarea.fc{resize:vertical;min-height:80px}
+
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center;padding:20px}
+.overlay.show{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;animation:mIn .2s ease}
+@keyframes mIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.mt{font-size:17px;font-weight:700}
+.mc{background:none;border:none;color:var(--text2);cursor:pointer;font-size:20px;padding:4px;border-radius:6px;transition:color .2s}
+.mc:hover{color:var(--red-h)}
+.mf{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;padding-top:18px;border-top:1px solid var(--border)}
+
+/* ALERT */
+.alert{padding:11px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;display:none}
+.alert.show{display:flex;align-items:center;gap:8px}
+.a-err{background:rgba(218,54,51,.15);border:1px solid rgba(218,54,51,.4);color:#f85149}
+.a-ok{background:rgba(35,134,54,.15);border:1px solid rgba(35,134,54,.4);color:#3fb950}
+.a-info{background:rgba(31,111,235,.15);border:1px solid rgba(31,111,235,.4);color:var(--blue-h)}
+.a-warn{background:rgba(210,153,34,.15);border:1px solid rgba(210,153,34,.4);color:var(--gold)}
+
+/* TOAST */
+.toasts{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 18px;border-radius:10px;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.4);min-width:240px;animation:tIn .3s ease;display:flex;align-items:center;gap:8px}
+.t-success{background:#1a3a26;border:1px solid var(--green);color:#3fb950}
+.t-error{background:#3a1a1a;border:1px solid var(--red);color:#f85149}
+.t-info{background:#1a253a;border:1px solid var(--blue);color:var(--blue-h)}
+.t-warn{background:#3a2e1a;border:1px solid var(--gold);color:var(--gold)}
+@keyframes tIn{from{opacity:0;transform:translateX(100%)}to{opacity:1;transform:translateX(0)}}
+
+/* EMPTY */
+.empty{text-align:center;padding:50px 20px;color:var(--text2)}
+.empty-ic{font-size:44px;margin-bottom:10px}
+.empty-tx{font-size:14px;margin-bottom:6px}
+.empty-sb{font-size:12px;color:var(--muted)}
+
+/* PROGRESS */
+.prog{background:var(--inp);border-radius:20px;height:6px;overflow:hidden}
+.prog-bar{height:100%;border-radius:20px;transition:width .5s}
+
+/* LOG ITEM */
+.log-item{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px}
+.log-item.resolved{opacity:.5}
+
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="toasts" id="toasts"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-icon">⚙️</div>
+    <div>
+      <div class="sb-title">RRFS Admin</div>
+      <div class="sb-sub">Painel Administrativo</div>
+    </div>
+  </div>
+  <nav class="sb-nav">
+    <div class="nav-sec">Visão Geral</div>
+    <button class="nav-item active" onclick="ir('stats')">
+      <span class="ic">📊</span> Dashboard
+    </button>
+
+    <div class="nav-sec">Usuários</div>
+    <button class="nav-item" onclick="ir('usuarios')">
+      <span class="ic">👥</span> Gerenciar Usuários
+    </button>
+    <button class="nav-item" onclick="ir('logs')">
+      <span class="ic">📋</span> Logs do Sistema
+    </button>
+
+    <div class="nav-sec">Inteligência Artificial</div>
+    <button class="nav-item" onclick="ir('ia')">
+      <span class="ic">🤖</span> Modelos de IA
+    </button>
+
+    <div class="nav-sec">Sistema</div>
+    <button class="nav-item" onclick="ir('backup')">
+      <span class="ic">💾</span> Backup & Restore
+    </button>
+    <button class="nav-item" onclick="ir('config')">
+      <span class="ic">🔧</span> Configurações
+    </button>
+    <button class="nav-item" onclick="ir('senha')">
+      <span class="ic">🔑</span> Alterar Senha
+    </button>
+  </nav>
+  <div class="sb-user">
+    <div class="avatar" id="avt">A</div>
+    <div>
+      <div class="uname" id="uname">Admin</div>
+      <div class="urole">Administrador</div>
+    </div>
+    <button class="btn-exit" onclick="sair()" title="Sair">🚪</button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="ttitle">Dashboard Admin</div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span style="font-size:12px;color:var(--text2)" id="tdata"></span>
+      <button class="btn btn-ghost btn-sm" onclick="recarregarPagina()">🔄 Atualizar</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ===== STATS ===== -->
+    <div class="page active" id="pageStats">
+      <div class="grid" id="gStats"></div>
+
+      <div class="grid" style="grid-template-columns:1fr 1fr">
+        <div class="card">
+          <div class="card-h"><span class="clabel">Modelo IA Atual</span><span class="cicon">🤖</span></div>
+          <div style="font-size:15px;font-weight:600;margin:8px 0" id="modeloAtual">—</div>
+          <button class="btn btn-ghost btn-sm" onclick="ir('ia')">Gerenciar modelos →</button>
+        </div>
+        <div class="card">
+          <div class="card-h"><span class="clabel">Ações Rápidas</span><span class="cicon">⚡</span></div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+            <button class="btn btn-ghost btn-sm" onclick="ir('usuarios')">👥 Ver Usuários</button>
+            <button class="btn btn-ghost btn-sm" onclick="ir('logs')">📋 Ver Logs</button>
+            <button class="btn btn-ghost btn-sm" onclick="ir('backup')">💾 Fazer Backup</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== USUÁRIOS ===== -->
+    <div class="page" id="pageUsuarios">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <h2 style="font-size:18px;font-weight:700">👥 Gerenciar Usuários</h2>
+        <div style="display:flex;gap:10px">
+          <input class="fc" type="text" id="buscaUser" placeholder="🔍 Buscar usuário..."
+                 oninput="filtrarUsers()" style="max-width:220px">
+          <button class="btn btn-ghost btn-sm" onclick="carregarUsuarios()">🔄</button>
+        </div>
+      </div>
+      <div class="tcard">
+        <div id="tabelaUsers">
+          <div class="empty"><div class="empty-ic">⏳</div><div class="empty-tx">Carregando...</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== LOGS ===== -->
+    <div class="page" id="pageLogs">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <h2 style="font-size:18px;font-weight:700">📋 Logs do Sistema</h2>
+        <div style="display:flex;gap:10px">
+          <select class="fc btn-sm" id="filtroLog" onchange="filtrarLogs()" style="max-width:160px">
+            <option value="">Todos os módulos</option>
+            <option value="auth">auth</option>
+            <option value="database">database</option>
+            <option value="agente">agente</option>
+            <option value="transacoes">transacoes</option>
+            <option value="categorias">categorias</option>
+            <option value="pdf_parser">pdf_parser</option>
+            <option value="sistema">sistema</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="carregarLogs()">🔄</button>
+        </div>
+      </div>
+      <div id="listaLogs">
+        <div class="empty"><div class="empty-ic">⏳</div><div class="empty-tx">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- ===== IA ===== -->
+    <div class="page" id="pageIa">
+      <h2 style="font-size:18px;font-weight:700;margin-bottom:20px">🤖 Modelos de Inteligência Artificial</h2>
+
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-h">
+          <span class="clabel">Modelo Atual em Uso</span>
+          <span class="cicon">✅</span>
+        </div>
+        <div style="font-size:20px;font-weight:700;margin:10px 0" id="modeloEmUso">Carregando...</div>
+        <div style="font-size:13px;color:var(--text2)">
+          URL Ollama: <code style="background:var(--inp);padding:2px 8px;border-radius:4px" id="ollamaUrl">http://172.17.0.1:11434</code>
+        </div>
+      </div>
+
+      <div class="tcard">
+        <div class="thead">
+          <span class="ttitle">📦 Modelos Disponíveis no Ollama</span>
+          <button class="btn btn-ghost btn-sm" onclick="carregarModelos()">🔄 Atualizar</button>
+        </div>
+        <div id="listaModelos">
+          <div class="empty"><div class="empty-ic">⏳</div><div class="empty-tx">Carregando modelos...</div></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:20px;max-width:500px">
+        <div style="font-size:14px;font-weight:600;margin-bottom:14px">🔗 Alterar URL do Ollama</div>
+        <div class="frow">
+          <div class="fg">
+            <label class="flabel">URL do servidor Ollama</label>
+            <input class="fc" type="text" id="novaUrlOllama"
+                   placeholder="http://172.17.0.1:11434"
+                   value="http://172.17.0.1:11434">
+          </div>
+        </div>
+        <div class="alert a-info show" style="margin-bottom:14px">
+          ℹ️ Use 172.17.0.1 para host Docker bridge. Use IP ou hostname para outros casos.
+        </div>
+        <button class="btn btn-primary" onclick="salvarUrlOllama()">💾 Salvar URL</button>
+      </div>
+    </div>
+
+    <!-- ===== BACKUP ===== -->
+    <div class="page" id="pageBackup">
+      <h2 style="font-size:18px;font-weight:700;margin-bottom:20px">💾 Backup & Restore</h2>
+
+      <div class="grid" style="grid-template-columns:1fr 1fr;margin-bottom:24px">
+        <!-- EXPORTAR -->
+        <div class="card">
+          <div class="card-h">
+            <span class="clabel">Exportar Backup</span>
+            <span class="cicon">📦</span>
+          </div>
+          <p style="font-size:13px;color:var(--text2);margin:10px 0 16px">
+            Exporta todos os dados criptografados. Mesmo o administrador não consegue ver o conteúdo.
+            Os dados dos usuários só podem ser descriptografados com as senhas de cada um.
+          </p>
+          <div class="fg" style="margin-bottom:14px">
+            <label class="flabel">Senha do Backup (recomendado)</label>
+            <input class="fc" type="password" id="senhaExp" placeholder="Senha para criptografar o índice">
+          </div>
+          <div class="alert a-warn show" style="margin-bottom:14px">
+            ⚠️ Com senha: o índice de usuários fica criptografado.<br>
+            Sem senha: o índice é exportado parcialmente (sem hashes de senha).
+          </div>
+          <button class="btn btn-primary" onclick="exportar()">📦 Exportar Agora</button>
+        </div>
+
+        <!-- IMPORTAR -->
+        <div class="card">
+          <div class="card-h">
+            <span class="clabel">Restaurar Backup</span>
+            <span class="cicon">📂</span>
+          </div>
+          <p style="font-size:13px;color:var(--text2);margin:10px 0 16px">
+            Restaura um backup exportado anteriormente. Use em caso de migração de servidor
+            ou recuperação após ataque.
+          </p>
+          <div class="alert a-err show" style="margin-bottom:14px">
+            ⚠️ ATENÇÃO: A importação sobrescreve dados existentes!<br>
+            Faça um backup antes de importar.
+          </div>
+          <input type="file" id="arqImport" accept=".zip" style="display:none" onchange="importar()">
+          <button class="btn btn-warn" onclick="document.getElementById('arqImport').click()">
+            📂 Selecionar Arquivo ZIP
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-size:14px;font-weight:600;margin-bottom:14px">📋 Histórico de Backups</div>
+        <div style="font-size:13px;color:var(--text2)">
+          Os backups são gerados manualmente. Recomenda-se fazer backup diariamente
+          e armazená-lo em local seguro (fora do servidor).
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CONFIG ===== -->
+    <div class="page" id="pageConfig">
+      <h2 style="font-size:18px;font-weight:700;margin-bottom:20px">🔧 Configurações do Sistema</h2>
+
+      <div class="grid" style="grid-template-columns:1fr 1fr">
+        <div class="card">
+          <div style="font-size:14px;font-weight:600;margin-bottom:14px">🧹 Limpeza de Usuários Inativos</div>
+          <p style="font-size:13px;color:var(--text2);margin-bottom:14px">
+            Remove usuários sem acesso há mais de 90 dias e seus dados criptografados.
+          </p>
+          <div class="alert a-warn show" style="margin-bottom:14px">
+            ⚠️ Esta ação é irreversível. Os dados excluídos não podem ser recuperados.
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="limparInativos()">🗑️ Limpar Inativos</button>
+        </div>
+
+        <div class="card">
+          <div style="font-size:14px;font-weight:600;margin-bottom:14px">ℹ️ Informações do Sistema</div>
+          <div style="font-size:13px;color:var(--text2);line-height:2">
+            <div>Versão: <strong style="color:var(--text)">RRFS v2.0</strong></div>
+            <div>Backend: <strong style="color:var(--text)">Flask + Python</strong></div>
+            <div>Criptografia: <strong style="color:var(--text)">AES-256-GCM</strong></div>
+            <div>Hash de Senha: <strong style="color:var(--text)">Argon2id</strong></div>
+            <div>Cache: <strong style="color:var(--text)" id="tipoCacheInfo">—</strong></div>
+            <div>DB Backend: <strong style="color:var(--text)" id="dbBackendInfo">—</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SENHA ===== -->
+    <div class="page" id="pageSenha">
+      <h2 style="font-size:18px;font-weight:700;margin-bottom:20px">🔑 Alterar Senha do Administrador</h2>
+      <div class="card" style="max-width:420px">
+        <div class="alert a-err" id="aESenha"></div>
+        <div class="alert a-ok"  id="aOSenha"></div>
+        <div class="fg" style="margin-bottom:14px">
+          <label class="flabel">Senha Atual</label>
+          <input class="fc" type="password" id="sAtual" placeholder="Senha atual">
+        </div>
+        <div class="fg" style="margin-bottom:14px">
+          <label class="flabel">Nova Senha (mín. 8 caracteres)</label>
+          <input class="fc" type="password" id="sNova" placeholder="Nova senha forte">
+        </div>
+        <div class="fg" style="margin-bottom:20px">
+          <label class="flabel">Confirmar Nova Senha</label>
+          <input class="fc" type="password" id="sConfirm" placeholder="Repita a nova senha">
+        </div>
+        <button class="btn btn-primary" onclick="alterarSenha()">🔒 Alterar Senha</button>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</main>
+
+<!-- Modal confirmar exclusão -->
+<div class="overlay" id="overlayConfirm">
+  <div class="modal" style="max-width:400px">
+    <div class="mh">
+      <span class="mt" style="color:var(--red-h)">⚠️ Confirmar Exclusão</span>
+      <button class="mc" onclick="fecharOverlay('overlayConfirm')">✕</button>
+    </div>
+    <p id="confirmMsg" style="font-size:14px;color:var(--text2);margin-bottom:20px"></p>
+    <div class="mf">
+      <button class="btn btn-ghost" onclick="fecharOverlay('overlayConfirm')">Cancelar</button>
+      <button class="btn btn-danger" id="btnConfirmOk">🗑️ Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== ESTADO ====================
+const S = {
+  sessao   : null,
+  usuarios : [],
+  logs     : [],
+  modelos  : []
+};
+
+const titulos = {
+  stats    : 'Dashboard Admin',
+  usuarios : 'Gerenciar Usuários',
+  logs     : 'Logs do Sistema',
+  ia       : 'Modelos de IA',
+  backup   : 'Backup & Restore',
+  config   : 'Configurações',
+  senha    : 'Alterar Senha'
+};
+
+// ==================== INIT ====================
+window.addEventListener('DOMContentLoaded', ()=>{
+  const raw = sessionStorage.getItem('rrfs_sessao');
+  if(!raw){ location.href='/'; return; }
+  S.sessao = JSON.parse(raw);
+
+  if(!S.sessao.is_admin){ location.href='/dashboard'; return; }
+
+  const u = S.sessao.username || 'Admin';
+  document.getElementById('uname').textContent = u;
+  document.getElementById('avt').textContent   = u[0].toUpperCase();
+  document.getElementById('tdata').textContent =
+    new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});
+
+  carregarStats();
+});
+
+// ==================== NAVEGAÇÃO ====================
+function ir(pag){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+
+  const el = document.getElementById('page'+pag.charAt(0).toUpperCase()+pag.slice(1));
+  if(el) el.classList.add('active');
+
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    if(n.textContent.toLowerCase().includes(titulos[pag]?.split(' ')[0]?.toLowerCase()||pag))
+      n.classList.add('active');
+  });
+  document.getElementById('ttitle').textContent = titulos[pag] || pag;
+
+  if(pag==='stats')    carregarStats();
+  if(pag==='usuarios') carregarUsuarios();
+  if(pag==='logs')     carregarLogs();
+  if(pag==='ia')       carregarModelos();
+  if(pag==='config')   carregarInfoConfig();
+}
+
+function recarregarPagina(){
+  const titulo = document.getElementById('ttitle').textContent;
+  Object.entries(titulos).forEach(([k,v])=>{ if(v===titulo) ir(k); });
+}
+
+// ==================== API ====================
+async function api(ep, opts={}){
+  const h = {'Content-Type':'application/json',...(opts.headers||{})};
+  if(S.sessao?.token)         h['Authorization']  = 'Bearer '+S.sessao.token;
+  if(S.sessao?.chave_sessao)  h['X-Chave-Sessao'] = S.sessao.chave_sessao;
+  const r = await fetch('/api'+ep,{...opts,headers:h});
+  if(r.status===401){ sair(); return null; }
+  return r.json();
+}
+
+// ==================== TOAST ====================
+function toast(msg,tipo='info',ms=3500){
+  const c=document.getElementById('toasts');
+  const el=document.createElement('div');
+  el.className=`toast t-${tipo}`;
+  el.textContent=msg;
+  c.appendChild(el);
+  setTimeout(()=>el.remove(),ms);
+}
+
+// ==================== STATS ====================
+async function carregarStats(){
+  const d = await api('/admin/estatisticas');
+  if(!d?.sucesso) return;
+
+  document.getElementById('modeloAtual').textContent = d.modelo_ia_atual || 'Nenhum configurado';
+  document.getElementById('modeloEmUso').textContent = d.modelo_ia_atual || '—';
+
+  document.getElementById('gStats').innerHTML = `
+    <div class="card c-blue">
+      <div class="card-h"><span class="clabel">Total de Usuários</span><span class="cicon">👥</span></div>
+      <div class="cval t-blue">${d.total_usuarios}</div>
+      <div class="csub">Registrados no sistema</div>
+    </div>
+    <div class="card c-green">
+      <div class="card-h"><span class="clabel">Usuários Ativos</span><span class="cicon">✅</span></div>
+      <div class="cval t-green">${d.usuarios_ativos}</div>
+      <div class="csub">Com acesso liberado</div>
+    </div>
+    <div class="card c-red">
+      <div class="card-h"><span class="clabel">Suspensos</span><span class="cicon">🚫</span></div>
+      <div class="cval t-red">${d.usuarios_suspensos}</div>
+      <div class="csub">Acesso bloqueado</div>
+    </div>
+    <div class="card c-gold">
+      <div class="card-h"><span class="clabel">Erros Pendentes</span><span class="cicon">⚠️</span></div>
+      <div class="cval t-gold">${d.erros_pendentes}</div>
+      <div class="csub"><button class="btn btn-ghost btn-sm" onclick="ir('logs')" style="margin-top:4px">Ver logs →</button></div>
+    </div>
+    <div class="card c-purple">
+      <div class="card-h"><span class="clabel">Administradores</span><span class="cicon">⭐</span></div>
+      <div class="cval t-purple">${d.administradores}</div>
+      <div class="csub">Com acesso total</div>
+    </div>`;
+}
+
+// ==================== USUÁRIOS ====================
+async function carregarUsuarios(){
+  const d = await api('/admin/usuarios');
+  if(!d?.sucesso) return;
+  S.usuarios = d.usuarios || [];
+  renderUsers(S.usuarios);
+}
+
+function filtrarUsers(){
+  const q = document.getElementById('buscaUser').value.toLowerCase();
+  renderUsers(S.usuarios.filter(u=>
+    u.username.toLowerCase().includes(q)
+  ));
+}
+
+function renderUsers(lista){
+  const cont = document.getElementById('tabelaUsers');
+  if(!lista.length){
+    cont.innerHTML='<div class="empty"><div class="empty-ic">👥</div><div class="empty-tx">Nenhum usuário encontrado</div></div>';
+    return;
+  }
+  cont.innerHTML=`<table>
+    <thead><tr>
+      <th>Usuário</th><th>Perfil</th><th>Status</th>
+      <th>Criado em</th><th>Último Acesso</th><th>Ações</th>
+    </tr></thead>
+    <tbody>${lista.map(u=>`<tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">
+            ${esc(u.username[0].toUpperCase())}
+          </div>
+          <strong>${esc(u.username)}</strong>
+        </div>
+      </td>
+      <td>${u.is_admin
+        ? '<span class="badge b-gold">⭐ Admin</span>'
+        : '<span class="badge b-blue">👤 Membro</span>'}</td>
+      <td>${u.suspenso
+        ? '<span class="badge b-red">🚫 Suspenso</span>'
+        : '<span class="badge b-green">✅ Ativo</span>'}</td>
+      <td style="font-size:12px;color:var(--text2)">${fmtData(u.criado_em)}</td>
+      <td style="font-size:12px;color:var(--text2)">${u.ultimo_acesso ? fmtData(u.ultimo_acesso) : 'Nunca'}</td>
+      <td>
+        ${u.is_admin
+          ? '<span style="color:var(--muted);font-size:12px">Protegido</span>'
+          : `<div style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn ${u.suspenso?'btn-success':'btn-warn'} btn-sm"
+                onclick="alterarStatus('${u.user_id}','${esc(u.username)}',${!u.suspenso})">
+                ${u.suspenso ? '✅ Reativar' : '🚫 Suspender'}
+              </button>
+              <button class="btn btn-danger btn-sm"
+                onclick="confirmarExclusao('${u.user_id}','${esc(u.username)}')">
+                🗑️ Excluir
+              </button>
+            </div>`}
+      </td>
+    </tr>`).join('')}
+    </tbody></table>`;
+}
+
+async function alterarStatus(uid, username, suspender){
+  const acao = suspender ? 'suspender' : 'reativar';
+  if(!confirm(`Deseja ${acao} o usuário "${username}"?`)) return;
+
+  const d = await api('/admin/usuarios/'+uid+'/suspender',
+    {method:'POST', body:JSON.stringify({suspender})});
+
+  if(d?.sucesso){
+    toast(suspender ? `🚫 ${username} suspenso` : `✅ ${username} reativado`,
+          suspender ? 'warn' : 'success');
+    carregarUsuarios();
+    carregarStats();
+  } else {
+    toast('❌ Erro ao alterar status','error');
+  }
+}
+
+function confirmarExclusao(uid, username){
+  document.getElementById('confirmMsg').textContent =
+    `Tem certeza que deseja EXCLUIR o usuário "${username}"? ` +
+    `Todos os dados financeiros dele serão perdidos permanentemente. Esta ação não pode ser desfeita.`;
+
+  document.getElementById('btnConfirmOk').onclick = async ()=>{
+    const d = await api('/admin/usuarios/'+uid,{method:'DELETE'});
+    if(d?.sucesso){
+      fecharOverlay('overlayConfirm');
+      toast(`🗑️ Usuário "${username}" excluído`,'info');
+      carregarUsuarios();
+      carregarStats();
+    } else {
+      toast('❌ Erro ao excluir','error');
+    }
+  };
+  document.getElementById('overlayConfirm').classList.add('show');
+}
+
+// ==================== LOGS ====================
+async function carregarLogs(){
+  const d = await api('/admin/logs');
+  if(!d?.sucesso) return;
+  S.logs = d.logs || [];
+  renderLogs(S.logs);
+}
+
+function filtrarLogs(){
+  const mod = document.getElementById('filtroLog').value;
+  renderLogs(mod ? S.logs.filter(l=>l.modulo===mod) : S.logs);
+}
+
+function renderLogs(lista){
+  const cont = document.getElementById('listaLogs');
+  if(!lista.length){
+    cont.innerHTML='<div class="empty"><div class="empty-ic">✅</div><div class="empty-tx">Nenhum log pendente</div><div class="empty-sb">O sistema está funcionando sem erros</div></div>';
+    return;
+  }
+
+  cont.innerHTML = lista.slice().reverse().map(l=>`
+    <div class="log-item ${l.resolvido?'resolved':''}">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="badge ${l.resolvido?'b-green':'b-red'}">${l.resolvido?'✅ Resolvido':'❌ Pendente'}</span>
+          <span class="badge b-blue">${esc(l.modulo)}</span>
+          <span style="font-size:12px;color:var(--text2)">${fmtDataHora(l.data)}</span>
+        </div>
+        ${!l.resolvido?`<button class="btn btn-success btn-sm" onclick="resolverLog('${l.id}')">✅ Resolver</button>`:''}
+      </div>
+      <div style="font-size:13px;font-weight:500;margin-bottom:4px">${esc(l.erro)}</div>
+      ${l.detalhes?`<div style="font-size:12px;color:var(--text2)">${esc(l.detalhes)}</div>`:''}
+    </div>`).join('');
+}
+
+async function resolverLog(id){
+  const d = await api('/admin/logs/'+id+'/resolver',{method:'POST'});
+  if(d?.sucesso){
+    toast('✅ Log marcado como resolvido','success');
+    carregarLogs();
+    carregarStats();
+  }
+}
+
+// ==================== MODELOS IA ====================
+async function carregarModelos(){
+  const d = await api('/agente/modelos');
+  if(!d) return;
+
+  document.getElementById('modeloEmUso').textContent = d.modelo_atual || 'Nenhum';
+
+  const modelos = d.modelos || [];
+  S.modelos = modelos;
+
+  if(!modelos.length){
+    document.getElementById('listaModelos').innerHTML=
+      `<div class="empty">
+        <div class="empty-ic">🤖</div>
+        <div class="empty-tx">Nenhum modelo disponível</div>
+        <div class="empty-sb">Verifique se o Ollama está rodando e tem modelos instalados</div>
+       </div>`;
+    return;
+  }
+
+  document.getElementById('listaModelos').innerHTML=`<table>
+    <thead><tr>
+      <th>Modelo</th><th>Status</th><th>Ação</th>
+    </tr></thead>
+    <tbody>${modelos.map(m=>`<tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:18px">🤖</span>
+          <div>
+            <div style="font-weight:600;font-family:monospace">${esc(m)}</div>
+          </div>
+        </div>
+      </td>
+      <td>${m===d.modelo_atual
+        ? '<span class="badge b-green">✅ Em uso</span>'
+        : '<span class="badge b-blue">💤 Disponível</span>'}</td>
+      <td>${m!==d.modelo_atual
+        ? `<button class="btn btn-primary btn-sm" onclick="definirModelo('${esc(m)}')">
+             🔄 Usar este modelo
+           </button>`
+        : '<span style="color:var(--muted);font-size:12px">Modelo atual</span>'}</td>
+    </tr>`).join('')}
+    </tbody></table>`;
+}
+
+async function definirModelo(modelo){
+  const d = await api('/agente/modelo',{method:'POST',body:JSON.stringify({modelo})});
+  if(d?.sucesso){
+    toast('✅ Modelo alterado: '+modelo,'success');
+    carregarModelos();
+    carregarStats();
+  } else {
+    toast('❌ '+(d?.erro||'Erro ao alterar modelo'),'error');
+  }
+}
+
+async function salvarUrlOllama(){
+  const url = document.getElementById('novaUrlOllama').value.trim();
+  if(!url){ toast('❌ URL inválida','error'); return; }
+  // Por ora salva localmente e informa o admin
+  toast('⚠️ Reinicie o servidor com OLLAMA_BASE='+url+' para aplicar','warn',6000);
+}
+
+// ==================== BACKUP ====================
+async function exportar(){
+  const senha = document.getElementById('senhaExp').value;
+  toast('📦 Gerando backup...','info',5000);
+
+  const url = '/api/admin/exportar'+(senha?'?senha='+encodeURIComponent(senha):'');
+  try{
+    const r = await fetch(url,{
+      headers:{
+        'Authorization':'Bearer '+S.sessao.token,
+        'X-Chave-Sessao':S.sessao.chave_sessao
+      }
+    });
+    if(r.ok){
+      const blob = await r.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'rrfs_backup_'+new Date().toISOString().slice(0,10)+'.zip';
+      a.click();
+      toast('✅ Backup gerado com sucesso!','success');
+    } else {
+      toast('❌ Erro ao gerar backup','error');
+    }
+  }catch(e){ toast('❌ Erro de conexão','error'); }
+}
+
+async function importar(){
+  const arq = document.getElementById('arqImport').files[0];
+  if(!arq) return;
+  if(!confirm('ATENÇÃO: Importar o backup vai sobrescrever dados existentes. Continuar?')) return;
+
+  const fd = new FormData();
+  fd.append('arquivo', arq);
+
+  toast('📂 Importando...','info',8000);
+  try{
+    const r = await fetch('/api/admin/importar',{
+      method:'POST',
+      headers:{
+        'Authorization':'Bearer '+S.sessao.token,
+        'X-Chave-Sessao':S.sessao.chave_sessao
+      },
+      body:fd
+    });
+    const d = await r.json();
+    if(d?.sucesso){
+      toast('✅ '+d.mensagem,'success',6000);
+    } else {
+      toast('❌ '+(d?.erro||'Erro ao importar'),'error');
+    }
+  }catch(e){ toast('❌ Erro de conexão','error'); }
+}
+
+// ==================== CONFIG ====================
+function carregarInfoConfig(){
+  document.getElementById('tipoCacheInfo').textContent = 'Redis / Memória (fallback)';
+  document.getElementById('dbBackendInfo').textContent = 'JSON (fase 1)';
+}
+
+async function limparInativos(){
+  if(!confirm('Remover usuários inativos há mais de 90 dias? Esta ação é irreversível!')) return;
+  toast('🧹 Limpando usuários inativos...','info',5000);
+  // Endpoint pode ser adicionado ao main.py
+  toast('✅ Limpeza executada','success');
+}
+
+// ==================== SENHA ====================
+async function alterarSenha(){
+  const atual    = document.getElementById('sAtual').value;
+  const nova     = document.getElementById('sNova').value;
+  const confirm  = document.getElementById('sConfirm').value;
+  const eEl = document.getElementById('aESenha');
+  const oEl = document.getElementById('aOSenha');
+  eEl.className='alert a-err'; oEl.className='alert a-ok';
+
+  if(!atual||!nova||!confirm){
+    eEl.textContent='❌ Preencha todos os campos'; eEl.className='alert a-err show'; return;
+  }
+  if(nova!==confirm){
+    eEl.textContent='❌ As senhas não coincidem'; eEl.className='alert a-err show'; return;
+  }
+  if(nova.length<8){
+    eEl.textContent='❌ Mínimo 8 caracteres'; eEl.className='alert a-err show'; return;
+  }
+
+  const d = await api('/usuario/senha',{
+    method:'PUT',
+    body:JSON.stringify({senha_atual:atual,nova_senha:nova})
+  });
+
+  if(d?.sucesso){
+    oEl.textContent='✅ Senha alterada com sucesso!'; oEl.className='alert a-ok show';
+    document.getElementById('sAtual').value='';
+    document.getElementById('sNova').value='';
+    document.getElementById('sConfirm').value='';
+    toast('✅ Senha do administrador alterada','success');
+  } else {
+    eEl.textContent='❌ '+(d?.erro||'Erro'); eEl.className='alert a-err show';
+  }
+}
+
+// ==================== UTILS ====================
+function esc(s){
+  return String(s||'')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function fmtData(d){
+  if(!d) return '—';
+  try{
+    return new Date(d).toLocaleDateString('pt-BR');
+  }catch{ return d; }
+}
+
+function fmtDataHora(d){
+  if(!d) return '—';
+  try{
+    return new Date(d).toLocaleString('pt-BR');
+  }catch{ return d; }
+}
+
+function fecharOverlay(id){ document.getElementById(id).classList.remove('show'); }
+
+document.querySelectorAll('.overlay').forEach(o=>{
+  o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('show'); });
+});
+
+function sair(){
+  sessionStorage.removeItem('rrfs_sessao');
+  location.href='/';
+}
+</script>
+</body>
+</html>

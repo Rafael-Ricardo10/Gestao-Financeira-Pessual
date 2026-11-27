@@ -1,0 +1,9 @@
+PyQt5
+matplotlib
+numpy
+python-dateutil
+yfinance
+pdfplumber
+requests
+# opcional (OCR de extratos): pytesseract, pillow
+# sistema: libtoxcore (Debian/Ubuntu: sudo apt install libtoxcore-dev)

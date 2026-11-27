@@ -1,0 +1,145 @@
+
+===== 2026-11-18 10:08:17 interface parada ha 1.0s =====
+--- Thread-2 (_bcb_worker)
+  File "/home/rafael/.local/share/Gastos_Pessoais/env/lib/python3.13/site-packages/urllib3/connectionpool.py", line 534, in _make_request
+    response = conn.getresponse()
+  File "/home/rafael/.local/share/Gastos_Pessoais/env/lib/python3.13/site-packages/urllib3/connection.py", line 571, in getresponse
+    httplib_response = super().getresponse()
+  File "/usr/lib/python3.13/http/client.py", line 1459, in getresponse
+    response.begin()
+  File "/usr/lib/python3.13/http/client.py", line 336, in begin
+    version, status, reason = self._read_status()
+  File "/usr/lib/python3.13/http/client.py", line 297, in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+  File "/usr/lib/python3.13/socket.py", line 719, in readinto
+    return self._sock.recv_into(b)
+  File "/usr/lib/python3.13/ssl.py", line 1304, in recv_into
+    return self.read(nbytes, buffer)
+  File "/usr/lib/python3.13/ssl.py", line 1138, in read
+    return self._sslobj.read(len, buffer)
+--- Rede-Loop
+  File "/usr/lib/python3.13/threading.py", line 1014, in _bootstrap
+    self._bootstrap_inner()
+  File "/usr/lib/python3.13/threading.py", line 1043, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.13/threading.py", line 994, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/rafael/.local/share/Gastos_Pessoais/modulos/rede.py", line 417, in _loop
+    self._acordar.wait(INTERVALO)
+  File "/usr/lib/python3.13/threading.py", line 659, in wait
+    signaled = self._cond.wait(timeout)
+  File "/usr/lib/python3.13/threading.py", line 363, in wait
+    gotit = waiter.acquire(True, timeout)
+--- ToxFin-BootstrapLoop
+  File "/usr/lib/python3.13/threading.py", line 1014, in _bootstrap
+    self._bootstrap_inner()
+  File "/usr/lib/python3.13/threading.py", line 1043, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.13/threading.py", line 994, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/rafael/.local/share/Gastos_Pessoais/modulos/tox_financeiro.py", line 703, in _bootstrap_periodico
+    time.sleep(1)
+--- ToxFin-Dispatch
+  File "/usr/lib/python3.13/threading.py", line 1014, in _bootstrap
+    self._bootstrap_inner()
+  File "/usr/lib/python3.13/threading.py", line 1043, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.13/threading.py", line 994, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/rafael/.local/share/Gastos_Pessoais/modulos/tox_financeiro.py", line 341, in _loop_msgs
+    numero, msg = self._fila.get(timeout=1)
+  File "/usr/lib/python3.13/queue.py", line 213, in get
+    self.not_empty.wait(remaining)
+  File "/usr/lib/python3.13/threading.py", line 363, in wait
+    gotit = waiter.acquire(True, timeout)
+--- ToxFin-Save
+  File "/usr/lib/python3.13/threading.py", line 1014, in _bootstrap
+    self._bootstrap_inner()
+  File "/usr/lib/python3.13/threading.py", line 1043, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.13/threading.py", line 994, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/rafael/.local/share/Gastos_Pessoais/modulos/tox_financeiro.py", line 354, in _loop_salvar
+    time.sleep(1)
+--- ToxFin-Loop
+  File "/usr/lib/python3.13/threading.py", line 1014, in _bootstrap
+    self._bootstrap_inner()
+  File "/usr/lib/python3.13/threading.py", line 1043, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.13/threading.py", line 994, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/rafael/.local/share/Gastos_Pessoais/modulos/tox_financeiro.py", line 336, in _loop
+    time.sleep(max(intervalo, 10) / 1000.0)
+--- Rede-Estado
+  File "/usr/lib/python3.13/threading.py", line 1014, in _bootstrap
+    self._bootstrap_inner()
+  File "/usr/lib/python3.13/threading.py", line 1043, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.13/threading.py", line 994, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/rafael/.local/share/Gastos_Pessoais/modulos/rede.py", line 463, in _loop_estado
+    self._est_ev.wait(3)
+  File "/usr/lib/python3.13/threading.py", line 659, in wait
+    signaled = self._cond.wait(timeout)
+  File "/usr/lib/python3.13/threading.py", line 363, in wait
+    gotit = waiter.acquire(True, timeout)
+--- Vigia
+  File "/usr/lib/python3.13/threading.py", line 1014, in _bootstrap
+    self._bootstrap_inner()
+  File "/usr/lib/python3.13/threading.py", line 1043, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.13/threading.py", line 994, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/rafael/.local/share/Gastos_Pessoais/app.py", line 113, in vigiar
+    f.write(''.join(traceback.format_stack(quadro)[-8:]))
+--- THREAD PRINCIPAL (interface)
+  File "/home/rafael/.local/share/Gastos_Pessoais/app.py", line 142, in <module>
+    main()
+  File "/home/rafael/.local/share/Gastos_Pessoais/app.py", line 138, in main
+    sys.exit(app.exec_())
+  File "/home/rafael/.local/share/Gastos_Pessoais/interface/main_window.py", line 930, in show_inflation_dialog
+    dialog.exec_()
+
+===== 2026-11-18 12:35:50 interface parada ha 1.0s =====
+--- Thread-1 (_fetch_currency_history_background)
+  File "/home/rafael/.local/share/Gastos_Pessoais/env/lib/python3.13/site-packages/yfinance/utils.py", line 870, in is_valid_timezone
+    _tz.timezone(tz)
+  File "/home/rafael/.local/share/Gastos_Pessoais/env/lib/python3.13/site-packages/pytz/__init__.py", line 191, in timezone
+    if zone in all_timezones_set:  # noqa
+  File "/home/rafael/.local/share/Gastos_Pessoais/env/lib/python3.13/site-packages/pytz/lazy.py", line 154, in _lazy
+    for i in fill_iter.pop():
+  File "/home/rafael/.local/share/Gastos_Pessoais/env/lib/python3.13/site-packages/pytz/lazy.py", line 101, in _lazy
+    list.extend(self, fill_iter.pop())
+  File "/home/rafael/.local/share/Gastos_Pessoais/env/lib/python3.13/site-packages/pytz/__init__.py", line 1126, in <genexpr>
+    tz for tz in _all_timezones_unchecked if resource_exists(tz))
+  File "/home/rafael/.local/share/Gastos_Pessoais/env/lib/python3.13/site-packages/pytz/__init__.py", line 131, in resource_exists
+    open_resource(name).close()
+  File "/home/rafael/.local/share/Gastos_Pessoais/env/lib/python3.13/site-packages/pytz/__init__.py", line 97, in open_resource
+    if not os.path.exists(filename):
+  File "<frozen genericpath>", line 19, in exists
+--- Vigia
+  File "/usr/lib/python3.13/threading.py", line 1014, in _bootstrap
+    self._bootstrap_inner()
+  File "/usr/lib/python3.13/threading.py", line 1043, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.13/threading.py", line 994, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/rafael/.local/share/Gastos_Pessoais/app.py", line 113, in vigiar
+    f.write(''.join(traceback.format_stack(quadro)[-8:]))
+--- THREAD PRINCIPAL (interface)
+  File "/home/rafael/.local/share/Gastos_Pessoais/app.py", line 142, in <module>
+    main()
+  File "/home/rafael/.local/share/Gastos_Pessoais/app.py", line 132, in main
+    janela = MainWindow()
+  File "/home/rafael/.local/share/Gastos_Pessoais/interface/main_window.py", line 585, in __init__
+    self._iniciar_sessao()
+  File "/home/rafael/.local/share/Gastos_Pessoais/interface/main_window.py", line 1215, in _iniciar_sessao
+    self._abrir_conta(chaves, novo, bk)
+  File "/home/rafael/.local/share/Gastos_Pessoais/interface/main_window.py", line 1278, in _abrir_conta
+    self.load_dashboard()
+  File "/home/rafael/.local/share/Gastos_Pessoais/interface/main_window.py", line 1659, in load_dashboard
+    self.load_transactions()
+  File "/home/rafael/.local/share/Gastos_Pessoais/interface/main_window.py", line 1716, in load_transactions
+    self._load_transactions_impl()
+  File "/home/rafael/.local/share/Gastos_Pessoais/interface/main_window.py", line 1783, in _load_transactions_impl
+    ).fetchall()

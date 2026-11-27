@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RRFS Gestão Financeira Pessoal</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg:        #0d1117;
+  --bg2:       #161b22;
+  --card:      #1c2128;
+  --input:     #21262d;
+  --border:    #30363d;
+  --text:      #e6edf3;
+  --text2:     #8b949e;
+  --muted:     #484f58;
+  --green:     #238636;
+  --green-h:   #2ea043;
+  --blue:      #1f6feb;
+  --blue-h:    #388bfd;
+  --red:       #da3633;
+  --red-h:     #f85149;
+  --gold:      #e3b341;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.particles { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+.particle {
+  position:absolute; width:2px; height:2px;
+  background:var(--blue); border-radius:50%;
+  animation: floatUp linear infinite; opacity:0.25;
+}
+@keyframes floatUp {
+  0%   { transform:translateY(100vh) translateX(0); opacity:0; }
+  10%  { opacity:0.25; }
+  90%  { opacity:0.25; }
+  100% { transform:translateY(-100px) translateX(80px); opacity:0; }
+}
+.wrap {
+  position:relative; z-index:1;
+  width:100%; max-width:420px;
+}
+.logo { text-align:center; margin-bottom:32px; animation:fadeDown .5s ease; }
+.logo-box {
+  width:72px; height:72px; margin:0 auto 14px;
+  background:linear-gradient(135deg,var(--blue),var(--green));
+  border-radius:20px; display:flex; align-items:center;
+  justify-content:center; font-size:32px;
+  box-shadow:0 8px 32px rgba(31,111,235,.35);
+}
+.logo h1 { font-size:22px; font-weight:700; }
+.logo p  { font-size:13px; color:var(--text2); margin-top:4px; }
+
+.card {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:16px; padding:32px;
+  box-shadow:0 16px 64px rgba(0,0,0,.45);
+  animation:fadeUp .5s ease;
+}
+.tabs {
+  display:flex; gap:4px; background:var(--bg2);
+  border-radius:10px; padding:4px; margin-bottom:26px;
+}
+.tab {
+  flex:1; padding:10px; border:none; background:transparent;
+  color:var(--text2); border-radius:8px; cursor:pointer;
+  font-size:14px; font-weight:500; transition:all .2s;
+}
+.tab.active {
+  background:var(--card); color:var(--text);
+  box-shadow:0 2px 8px rgba(0,0,0,.3);
+}
+.fgroup { margin-bottom:16px; }
+label { display:block; font-size:13px; color:var(--text2); font-weight:500; margin-bottom:7px; }
+.iw { position:relative; }
+.iw span { position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:16px; }
+input {
+  width:100%; padding:12px 12px 12px 40px;
+  background:var(--input); border:1px solid var(--border);
+  border-radius:8px; color:var(--text); font-size:14px;
+  outline:none; transition:border-color .2s, box-shadow .2s;
+}
+input:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(31,111,235,.15); }
+
+.btn {
+  width:100%; padding:13px; border:none; border-radius:8px;
+  font-size:15px; font-weight:600; cursor:pointer;
+  transition:all .2s; display:flex; align-items:center;
+  justify-content:center; gap:8px;
+}
+.btn-blue  { background:var(--blue);  color:#fff; }
+.btn-blue:hover  { background:var(--blue-h); transform:translateY(-1px); box-shadow:0 4px 16px rgba(31,111,235,.4); }
+.btn-green { background:var(--green); color:#fff; }
+.btn-green:hover { background:var(--green-h); transform:translateY(-1px); }
+.btn:disabled { opacity:.6; cursor:not-allowed; transform:none !important; }
+
+.alert {
+  padding:11px 14px; border-radius:8px; font-size:13px;
+  margin-bottom:16px; display:none; align-items:center; gap:8px;
+}
+.alert.show { display:flex; }
+.err  { background:rgba(218,54,51,.15); border:1px solid rgba(218,54,51,.4); color:#f85149; }
+.ok   { background:rgba(35,134,54,.15); border:1px solid rgba(35,134,54,.4); color:#3fb950; }
+.warn { background:rgba(227,179,65,.15); border:1px solid rgba(227,179,65,.4); color:var(--gold); }
+
+.spin {
+  width:18px; height:18px; border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff; border-radius:50%;
+  animation:spin .7s linear infinite; display:none;
+}
+@keyframes spin    { to { transform:rotate(360deg); } }
+@keyframes fadeDown { from{opacity:0;transform:translateY(-18px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeUp   { from{opacity:0;transform:translateY(18px)}  to{opacity:1;transform:translateY(0)} }
+
+.footer { text-align:center; margin-top:22px; font-size:12px; color:var(--muted); }
+
+/* Modal troca senha */
+.overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.75); z-index:200;
+  align-items:center; justify-content:center; padding:20px;
+}
+.overlay.show { display:flex; }
+.mcard {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:16px; padding:32px; max-width:400px; width:100%;
+  animation:fadeUp .2s ease;
+}
+.mcard h3 { color:var(--gold); margin-bottom:6px; }
+.mcard p  { color:var(--text2); font-size:13px; margin-bottom:20px; }
+</style>
+</head>
+<body>
+<div class="particles" id="ptc"></div>
+
+<!-- Modal troca de senha obrigatória -->
+<div class="overlay" id="overlayTroca">
+  <div class="mcard">
+    <h3>⚠️ Troca de Senha Obrigatória</h3>
+    <p>Por segurança, defina uma nova senha antes de continuar.</p>
+    <div class="alert err" id="alertTroca"></div>
+    <div class="fgroup">
+      <label>Senha Atual</label>
+      <div class="iw"><span>🔑</span>
+        <input type="password" id="tAtual" placeholder="Senha atual">
+      </div>
+    </div>
+    <div class="fgroup">
+      <label>Nova Senha (mín. 8 caracteres)</label>
+      <div class="iw"><span>🔒</span>
+        <input type="password" id="tNova" placeholder="Nova senha forte">
+      </div>
+    </div>
+    <div class="fgroup">
+      <label>Confirmar Nova Senha</label>
+      <div class="iw"><span>🔒</span>
+        <input type="password" id="tConfirm" placeholder="Repita a nova senha">
+      </div>
+    </div>
+    <button class="btn btn-blue" onclick="confirmarTroca()">✅ Confirmar Nova Senha</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="logo">
+    <div class="logo-box">💰</div>
+    <h1>RRFS Gestão Financeira</h1>
+    <p>Pessoal e Familiar · Seguro · Inteligente</p>
+  </div>
+
+  <div class="card">
+    <div class="tabs">
+      <button class="tab active" onclick="aba('login')">Entrar</button>
+      <button class="tab"        onclick="aba('reg')">Criar Conta</button>
+    </div>
+
+    <div class="alert err"  id="aErr"></div>
+    <div class="alert ok"   id="aOk"></div>
+    <div class="alert warn" id="aWarn"></div>
+
+    <!-- LOGIN -->
+    <div id="fLogin">
+      <div class="fgroup">
+        <label>Usuário</label>
+        <div class="iw"><span>👤</span>
+          <input type="text" id="lUser" placeholder="Seu usuário"
+                 autocomplete="username" onkeydown="enter(event,'btnLogin')">
+        </div>
+      </div>
+      <div class="fgroup">
+        <label>Senha</label>
+        <div class="iw"><span>🔒</span>
+          <input type="password" id="lSenha" placeholder="Sua senha"
+                 autocomplete="current-password" onkeydown="enter(event,'btnLogin')">
+        </div>
+      </div>
+      <button class="btn btn-blue" id="btnLogin" onclick="login()">
+        <div class="spin" id="spLogin"></div>
+        <span id="txLogin">🚀 Entrar</span>
+      </button>
+    </div>
+
+    <!-- REGISTRO -->
+    <div id="fReg" style="display:none">
+      <div class="fgroup">
+        <label>Usuário (3–50 caracteres)</label>
+        <div class="iw"><span>👤</span>
+          <input type="text" id="rUser" placeholder="Escolha um usuário" autocomplete="username">
+        </div>
+      </div>
+      <div class="fgroup">
+        <label>Senha (mín. 8 caracteres)</label>
+        <div class="iw"><span>🔒</span>
+          <input type="password" id="rSenha" placeholder="Senha forte" autocomplete="new-password">
+        </div>
+      </div>
+      <div class="fgroup">
+        <label>Confirmar Senha</label>
+        <div class="iw"><span>🔒</span>
+          <input type="password" id="rConfirm" placeholder="Repita a senha"
+                 autocomplete="new-password" onkeydown="enter(event,'btnReg')">
+        </div>
+      </div>
+      <button class="btn btn-green" id="btnReg" onclick="registro()">
+        <div class="spin" id="spReg"></div>
+        <span id="txReg">✅ Criar Conta</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="footer">🔒 AES-256 · Argon2id · TLS · RRFS v2.0</div>
+</div>
+
+<script>
+// partículas
+(()=>{
+  const c=document.getElementById('ptc');
+  for(let i=0;i<28;i++){
+    const p=document.createElement('div');
+    p.className='particle';
+    p.style.cssText=`left:${Math.random()*100}%;
+      animation-duration:${8+Math.random()*14}s;
+      animation-delay:${Math.random()*10}s;
+      width:${1+Math.random()*2}px;height:${1+Math.random()*2}px`;
+    c.appendChild(p);
+  }
+})();
+
+let _sessao = null;
+
+function aba(a){
+  document.getElementById('fLogin').style.display = a==='login'?'':'none';
+  document.getElementById('fReg').style.display   = a==='reg'?'':'none';
+  document.querySelectorAll('.tab').forEach((t,i)=>
+    t.classList.toggle('active',(a==='login'&&i===0)||(a==='reg'&&i===1)));
+  limpa();
+}
+
+function limpa(){
+  ['aErr','aOk','aWarn'].forEach(id=>{
+    const e=document.getElementById(id);
+    e.className='alert'; e.textContent='';
+  });
+}
+function erro(m){ limpa(); const e=document.getElementById('aErr'); e.textContent='❌ '+m; e.className='alert err show'; }
+function ok(m)  { limpa(); const e=document.getElementById('aOk');  e.textContent='✅ '+m; e.className='alert ok show';  }
+function warn(m){ limpa(); const e=document.getElementById('aWarn');e.textContent='⚠️ '+m; e.className='alert warn show';}
+
+function loading(btn,sp,tx,on,label){
+  document.getElementById(btn).disabled=on;
+  document.getElementById(sp).style.display=on?'block':'none';
+  document.getElementById(tx).textContent=on?'Aguarde...':label;
+}
+function enter(e,btn){ if(e.key==='Enter') document.getElementById(btn).click(); }
+
+async function login(){
+  const u=document.getElementById('lUser').value.trim();
+  const s=document.getElementById('lSenha').value;
+  if(!u||!s){ erro('Preencha usuário e senha'); return; }
+
+  loading('btnLogin','spLogin','txLogin',true,'🚀 Entrar');
+  limpa();
+
+  try{
+    const r=await fetch('/api/login',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:u,password:s})
+    });
+    const d=await r.json();
+
+    if(!d.sucesso){ erro(d.erro||'Credenciais inválidas'); return; }
+
+    _sessao={
+      token       : d.token,
+      chave_sessao: d.chave_sessao,
+      username    : d.username,
+      is_admin    : d.is_admin
+    };
+    sessionStorage.setItem('rrfs_sessao', JSON.stringify(_sessao));
+
+    if(d.deve_trocar_senha){
+      document.getElementById('overlayTroca').classList.add('show');
+      return;
+    }
+
+    ok('Login realizado! Redirecionando...');
+
+    // ← REDIRECIONAMENTO BASEADO NO PERFIL
+    setTimeout(()=>{
+      window.location.href = d.is_admin ? '/admin' : '/dashboard';
+    }, 700);
+
+  }catch(e){ erro('Erro de conexão'); }
+  finally{ loading('btnLogin','spLogin','txLogin',false,'🚀 Entrar'); }
+}
+
+async function registro(){
+  const u=document.getElementById('rUser').value.trim();
+  const s=document.getElementById('rSenha').value;
+  const c=document.getElementById('rConfirm').value;
+  if(!u||!s||!c){ erro('Preencha todos os campos'); return; }
+  if(s!==c){ erro('As senhas não coincidem'); return; }
+  if(s.length<8){ erro('Senha deve ter no mínimo 8 caracteres'); return; }
+
+  loading('btnReg','spReg','txReg',true,'✅ Criar Conta');
+  limpa();
+
+  try{
+    const r=await fetch('/api/registro',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:u,password:s})
+    });
+    const d=await r.json();
+    if(!d.sucesso){ erro(d.erro||'Erro ao criar conta'); return; }
+    ok('Conta criada! Faça o login.');
+    ['rUser','rSenha','rConfirm'].forEach(id=>document.getElementById(id).value='');
+    setTimeout(()=>aba('login'),1500);
+  }catch(e){ erro('Erro de conexão'); }
+  finally{ loading('btnReg','spReg','txReg',false,'✅ Criar Conta'); }
+}
+
+async function confirmarTroca(){
+  const a=document.getElementById('tAtual').value;
+  const n=document.getElementById('tNova').value;
+  const c=document.getElementById('tConfirm').value;
+  const el=document.getElementById('alertTroca');
+  el.className='alert err'; el.textContent='';
+
+  if(!a||!n||!c){ el.textContent='❌ Preencha todos os campos'; el.className='alert err show'; return; }
+  if(n!==c)     { el.textContent='❌ As senhas não coincidem';   el.className='alert err show'; return; }
+  if(n.length<8){ el.textContent='❌ Mínimo 8 caracteres';       el.className='alert err show'; return; }
+
+  try{
+    const r=await fetch('/api/usuario/senha',{
+      method:'PUT',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+_sessao.token,
+        'X-Chave-Sessao':_sessao.chave_sessao
+      },
+      body:JSON.stringify({senha_atual:a,nova_senha:n})
+    });
+    const d=await r.json();
+    if(!d.sucesso){ el.textContent='❌ '+(d.erro||'Erro'); el.className='alert err show'; return; }
+
+    document.getElementById('overlayTroca').classList.remove('show');
+    ok('Senha alterada! Redirecionando...');
+    setTimeout(()=>{
+      window.location.href = _sessao.is_admin ? '/admin' : '/dashboard';
+    },800);
+  }catch(e){
+    el.textContent='❌ Erro de conexão'; el.className='alert err show';
+  }
+}
+</script>
+</body>
+</html>
